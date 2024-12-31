@@ -1,7 +1,7 @@
 package com.plcoding.tanksmp.model;
 
-import com.plcoding.tanksmp.model.actions.TankActions;
 import com.plcoding.tanksmp.model.keywords.TankActionName;
+import com.plcoding.tanksmp.model.tankActions.TankActions;
 
 import lombok.Data;
 

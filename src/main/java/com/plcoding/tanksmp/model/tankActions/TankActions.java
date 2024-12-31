@@ -1,4 +1,4 @@
-package com.plcoding.tanksmp.model.actions;
+package com.plcoding.tanksmp.model.tankActions;
 
 import com.plcoding.tanksmp.model.keywords.ActionType;
 // import com.plcoding.tanksmp.model.TankAction;
