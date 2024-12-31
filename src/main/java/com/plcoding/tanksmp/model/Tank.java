@@ -1,5 +1,8 @@
 package com.plcoding.tanksmp.model;
 
+import com.plcoding.tanksmp.model.actions.TankActions;
+import com.plcoding.tanksmp.model.keywords.TankActionName;
+
 import lombok.Data;
 
 @Data
@@ -11,8 +14,8 @@ public class Tank {
     private Integer shields;
     private Float targetX; 
     private Float targetY;
-    // private Action[] availableActions;
-    private String selectedAction;
+    private TankActions tankActions;
+    private TankActionName selectedAction;
 
     public Tank initializeTank(Float[] requestedColor) {
         Tank tank = new Tank();
@@ -23,6 +26,8 @@ public class Tank {
         tank.shields = 100;
         tank.targetX = 100f;
         tank.targetY = 100f;
+        tank.selectedAction = TankActionName.STANDARD_SHOT;
+        tank.tankActions = new TankActions();
         return tank;
     }
 }
