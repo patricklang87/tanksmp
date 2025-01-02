@@ -1,14 +1,13 @@
-import { useState } from 'react'
-import './App.css'
-import StartScreen from './features/startScreen/StartScreen'
+import { useState } from "react";
+import "./App.css";
+import StartScreen from "./features/startScreen/StartScreen";
 
 function App() {
-
   return (
     <>
-<StartScreen />
+      <StartScreen />
     </>
-  )
+  );
 }
 
-export default App
+export default App;
