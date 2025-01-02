@@ -15,6 +15,7 @@ import com.plcoding.tanksmp.model.GameStatus;
 import com.plcoding.tanksmp.model.Player;
 import com.plcoding.tanksmp.model.Tank;
 import com.plcoding.tanksmp.model.Topography;
+import com.plcoding.tanksmp.model.constants.TankColorOptions;
 import com.plcoding.tanksmp.model.keywords.ColorSchemas;
 import com.plcoding.tanksmp.storage.GameStorage;
 
@@ -28,8 +29,10 @@ public class GameService {
 
         game.setTopography(topography);
         game.setGameStatus(GameStatus.NEW);
-        Tank newTank = new Tank().initializeTank(requestedColor);
-        Player firstPlayer = new Player(playerName, newTank, 0, 0);
+        // Tank newTank = new Tank().initializeTank(requestedColor);
+        Player firstPlayer = new Player(playerName,
+                null, // newTank,
+                        0, 0);
         ArrayList<Player> players = new ArrayList<Player>();
         players.add(firstPlayer);
         game.setPlayers(players);
@@ -42,6 +45,7 @@ public class GameService {
         }
         game.setColorSchema(colorSchema);
         game.setCurrentPlayerIndex(0);
+        game.setAvailableColors(new TankColorOptions().getTankColors());
 
         GameStorage.getInstance().setGame(game);
         return game;
