@@ -31,7 +31,7 @@ const StartScreen = () => {
   // }
 
 
-  const [initializeMatch, { isLoading, isSuccess, isError, error }] = useInitializeMatchMutation();
+  const [initializeMatch, { data, isLoading, isSuccess, isError, error }] = useInitializeMatchMutation();
   const handleInitializeMatchClick = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     try {
@@ -84,7 +84,7 @@ const StartScreen = () => {
       <button type="submit" disabled={isLoading}>
         {isLoading ? 'Initializing...' : 'Initialize Match'}
       </button>
-      {isSuccess && <p>Match created successfully!</p>}
+        {isSuccess && <p>Game Id: {data.gameId}</p>}
       {isError && <p>Error: {error.toString()}</p>}
     </form>
 
