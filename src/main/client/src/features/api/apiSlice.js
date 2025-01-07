@@ -12,7 +12,7 @@ export const apiSlice = createApi({
         // }),
         initializeMatch: builder.mutation({
             query: (playerName) => ({
-                url: "/match",
+                url: "/match/initialize",
                 method: "POST",
                 body: { playerName },
             }),
