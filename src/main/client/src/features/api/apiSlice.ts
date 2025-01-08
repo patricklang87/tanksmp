@@ -5,7 +5,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const apiSlice = createApi({
   reducerPath: "api",
-    baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:8080" }),
+  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:8080" }),
   tagTypes: ["Match"],
   endpoints: (builder) => ({
     // getMatches: builder.query({
@@ -16,23 +16,25 @@ export const apiSlice = createApi({
       query: (playerName: string) => ({
         url: "/match/initialize",
         method: "POST",
-            body: { playerName },
-        }),
-        invalidatesTags: ["Match"],
+        body: { playerName },
+      }),
+      invalidatesTags: ["Match"],
     }),
     joinMatch: builder.mutation({
       query: ({
         playerName,
         gameId,
+        requestedColor,
       }: {
         playerName: string;
         gameId: string;
+        requestedColor: number[];
       }) => ({
         url: "/match/join",
         method: "POST",
-        body: { playerName, gameId },
-        }),
-        invalidatesTags: ["Match"]
+        body: { playerName, gameId, requestedColor },
+      }),
+      invalidatesTags: ["Match"],
     }),
     startMatch: builder.mutation({
       query: ({
@@ -46,13 +48,13 @@ export const apiSlice = createApi({
         method: "POST",
         body: { playerName, gameId },
       }),
-      invalidatesTags: ["Match"]
+      invalidatesTags: ["Match"],
     }),
   }),
 });
 
 export const {
-//   useGetMatchesQuery,
+  //   useGetMatchesQuery,
   useStartMatchMutation,
   useInitializeMatchMutation,
   useJoinMatchMutation,

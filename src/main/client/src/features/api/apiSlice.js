@@ -19,12 +19,12 @@ export const apiSlice = createApi({
             invalidatesTags: ["Match"],
         }),
         joinMatch: builder.mutation({
-            query: ({ playerName, gameId, }) => ({
+            query: ({ playerName, gameId, requestedColor, }) => ({
                 url: "/match/join",
                 method: "POST",
-                body: { playerName, gameId },
+                body: { playerName, gameId, requestedColor },
             }),
-            invalidatesTags: ["Match"]
+            invalidatesTags: ["Match"],
         }),
         startMatch: builder.mutation({
             query: ({ playerName, gameId, }) => ({
@@ -32,7 +32,7 @@ export const apiSlice = createApi({
                 method: "POST",
                 body: { playerName, gameId },
             }),
-            invalidatesTags: ["Match"]
+            invalidatesTags: ["Match"],
         }),
     }),
 });
