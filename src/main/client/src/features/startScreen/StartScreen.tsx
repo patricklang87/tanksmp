@@ -1,4 +1,8 @@
 import { useStartScreenProps } from "./startScreenProps";
+import IsTruthy from "../../components/common/logic/IsTruthy";
+import IsFalsy from "../../components/common/logic/IsFalsy";
+import JoinMatch from "./JoinMatch";
+import CreateNewMatch from "./CreateNewMatch";
 
 const StartScreen = () => {
   const {
@@ -12,60 +16,38 @@ const StartScreen = () => {
     setPlayerName,
     // setRequestedColor,
     setGameId,
+    createNewMatch,
+    setCreateNewMatch,
   } = useStartScreenProps();
 
   return (
     <>
       <h1 className="title-card">Tanks fer Nuthin'!</h1>
 
-      <form onSubmit={handleInitializeMatchClick}>
-      <label className="form-label" htmlFor="playerName">
-          Player Name:{" "}
-        </label>
-        <input
-          type="text"
-          id="playerName"
-          className="form-control"
-          maxLength={8}
-          onChange={(e) => setPlayerName(e.target.value)}
+      <div>
+        <button onClick={() => setCreateNewMatch(true)}>Create Match</button>
+        <button onClick={() => setCreateNewMatch(false)}>Join Match</button>
+      </div>
+
+      <IsTruthy value={createNewMatch}>
+        <CreateNewMatch
+          setPlayerName={setPlayerName}
+          isError={isError}
+          isSuccess={isSuccess}
+          isLoading={isLoading}
+          data={data}
+          error={error}
+          handleInitializeMatchClick={handleInitializeMatchClick}
         />
-        <br/>
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? "Initializing..." : "Initialize Match"}
-        </button>
-        {isSuccess && <p>Game Id: {data.gameId}</p>}
-        {isError && <p>Error: {error?.toString()}</p>}
-      </form>
-      <br />
-      <p>*** OR ***</p>
-      <br />
-      <form onSubmit={handleJoinMatchClick}>
-      <label className="form-label" htmlFor="gameId">
-          Game Id:{" "}
-        </label>
-        <input
-          type="text"
-          id="gameId"
-          className="form-control"
-          onChange={(e) => setGameId(e.target.value)}
+      </IsTruthy>
+
+      <IsFalsy value={createNewMatch}>
+        <JoinMatch
+          setGameId={setGameId}
+          setPlayerName={setPlayerName}
+          handleJoinMatchClick={handleJoinMatchClick}
         />
-
-
-          {/* <label className="form-label" htmlFor="requestedColor">
-          Game Id:{" "}
-        </label>
-        <input
-          type="text"
-          id="gameId"
-          className="form-control"
-          onChange={() => setRequestedColor([10, 10, 10, 0])}
-        /> */}
-        <br/>
-        <button type="submit" disabled={isLoading}>
-          Join Game
-        </button>
-      </form>
-
+      </IsFalsy>
     </>
   );
 };

@@ -5,9 +5,10 @@ import {
 } from "../api/apiSlice";
 
 export const useStartScreenProps = () => {
-  const [playerName, setPlayerName] = useState("");
-  const [requestedColor, setRequestedColor] = useState([0, 0, 0, 0]);
-  const [gameId, setGameId] = useState("");
+  const [playerName, setPlayerName] = useState<string>("");
+  const [requestedColor, setRequestedColor] = useState<number[]>([0, 0, 0, 0]);
+  const [gameId, setGameId] = useState<string>("");
+  const [createNewMatch, setCreateNewMatch] = useState<boolean>(true);
 
   const [initializeMatch, { data, isLoading, isSuccess, isError, error }] =
     useInitializeMatchMutation();
@@ -47,5 +48,7 @@ export const useStartScreenProps = () => {
     setPlayerName,
     setGameId,
     setRequestedColor,
+    createNewMatch,
+    setCreateNewMatch,
   };
 };

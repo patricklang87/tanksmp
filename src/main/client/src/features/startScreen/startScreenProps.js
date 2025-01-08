@@ -4,6 +4,7 @@ export const useStartScreenProps = () => {
     const [playerName, setPlayerName] = useState("");
     const [requestedColor, setRequestedColor] = useState([0, 0, 0, 0]);
     const [gameId, setGameId] = useState("");
+    const [createNewMatch, setCreateNewMatch] = useState(true);
     const [initializeMatch, { data, isLoading, isSuccess, isError, error }] = useInitializeMatchMutation();
     const [joinMatch] = useJoinMatchMutation();
     const handleInitializeMatchClick = async (e) => {
@@ -38,5 +39,7 @@ export const useStartScreenProps = () => {
         setPlayerName,
         setGameId,
         setRequestedColor,
+        createNewMatch,
+        setCreateNewMatch,
     };
 };
