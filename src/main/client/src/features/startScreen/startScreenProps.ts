@@ -6,7 +6,7 @@ import {
 
 export const useStartScreenProps = () => {
   const [playerName, setPlayerName] = useState<string>("");
-  const [requestedColor, setRequestedColor] = useState<number[]>([0, 0, 0, 0]);
+  const [requestedColor, setRequestedColor] = useState<number | null>(null);
   const [gameId, setGameId] = useState<string>("");
   const [createNewMatch, setCreateNewMatch] = useState<boolean>(true);
 
@@ -19,7 +19,7 @@ export const useStartScreenProps = () => {
   ) => {
     e.preventDefault();
     try {
-      const res = await initializeMatch(playerName).unwrap();
+      const res = await initializeMatch({ playerName, requestedColor }).unwrap();
       console.log("initialize", res);
       setPlayerName("");
     } catch (err) {
@@ -48,6 +48,7 @@ export const useStartScreenProps = () => {
     setPlayerName,
     setGameId,
     setRequestedColor,
+    requestedColor,
     createNewMatch,
     setCreateNewMatch,
   };

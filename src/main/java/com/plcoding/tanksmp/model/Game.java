@@ -1,9 +1,9 @@
 package com.plcoding.tanksmp.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import com.plcoding.tanksmp.customTypes.Point2D;
-import com.plcoding.tanksmp.model.constants.RgbaColor;
 
 import lombok.Data;
 
@@ -16,6 +16,10 @@ public class Game {
     private String colorSchema;
     private int currentPlayerIndex;
     private int maxPlayerCount = 6;
-    private ArrayList<RgbaColor> availableColors;
+    private String[] claimedColors = new String[6];
+
+    public Game() {
+        Arrays.fill(this.claimedColors, "");
+    }
 
 }

@@ -1,7 +1,9 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-// 7:04
+
 // json-server --watch data/db.json --port 8080
+
+// https://wanago.io/2022/01/03/websockets-redux-toolkit-query-typescript/
 
 export const apiSlice = createApi({
   reducerPath: "api",
@@ -13,10 +15,16 @@ export const apiSlice = createApi({
     //     providesTags: ['Match']
     // }),
     initializeMatch: builder.mutation({
-      query: (playerName: string) => ({
+      query: ({
+        playerName,
+        requestedColor,
+      }: {
+        playerName: string;
+        requestedColor: number | null;
+      }) => ({
         url: "/match/initialize",
         method: "POST",
-        body: { playerName },
+        body: { playerName, requestedColor },
       }),
       invalidatesTags: ["Match"],
     }),
@@ -28,7 +36,7 @@ export const apiSlice = createApi({
       }: {
         playerName: string;
         gameId: string;
-        requestedColor: number[];
+        requestedColor: number | null;
       }) => ({
         url: "/match/join",
         method: "POST",

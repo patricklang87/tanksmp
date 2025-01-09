@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useInitializeMatchMutation, useJoinMatchMutation, } from "../api/apiSlice";
 export const useStartScreenProps = () => {
     const [playerName, setPlayerName] = useState("");
-    const [requestedColor, setRequestedColor] = useState([0, 0, 0, 0]);
+    const [requestedColor, setRequestedColor] = useState(null);
     const [gameId, setGameId] = useState("");
     const [createNewMatch, setCreateNewMatch] = useState(true);
     const [initializeMatch, { data, isLoading, isSuccess, isError, error }] = useInitializeMatchMutation();
@@ -10,7 +10,7 @@ export const useStartScreenProps = () => {
     const handleInitializeMatchClick = async (e) => {
         e.preventDefault();
         try {
-            const res = await initializeMatch(playerName).unwrap();
+            const res = await initializeMatch({ playerName, requestedColor }).unwrap();
             console.log("initialize", res);
             setPlayerName("");
         }
@@ -39,6 +39,7 @@ export const useStartScreenProps = () => {
         setPlayerName,
         setGameId,
         setRequestedColor,
+        requestedColor,
         createNewMatch,
         setCreateNewMatch,
     };

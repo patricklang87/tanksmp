@@ -15,24 +15,22 @@ import com.plcoding.tanksmp.model.GameStatus;
 import com.plcoding.tanksmp.model.Player;
 import com.plcoding.tanksmp.model.Tank;
 import com.plcoding.tanksmp.model.Topography;
-import com.plcoding.tanksmp.model.constants.TankColorOptions;
 import com.plcoding.tanksmp.model.keywords.ColorSchemas;
 import com.plcoding.tanksmp.storage.GameStorage;
 
 @Service
 @AllArgsConstructor
 public class GameService {
-    public Game initializeGame(String playerName, Float[] requestedColor) {
+
+    public Game initializeGame(String playerName, Integer requestedColor) {
         Game game = new Game();
         game.setGameId(UUID.randomUUID().toString());
         ArrayList<Point2D> topography = new Topography().createInitialTopography(1400, 800);
 
         game.setTopography(topography);
         game.setGameStatus(GameStatus.NEW);
-        // Tank newTank = new Tank().initializeTank(requestedColor);
-        Player firstPlayer = new Player(playerName,
-                null, // newTank,
-                        0, 0);
+        Tank newTank = new Tank().initializeTank(requestedColor);
+        Player firstPlayer = new Player(playerName, newTank, 0, 0);
         ArrayList<Player> players = new ArrayList<Player>();
         players.add(firstPlayer);
         game.setPlayers(players);
@@ -45,13 +43,13 @@ public class GameService {
         }
         game.setColorSchema(colorSchema);
         game.setCurrentPlayerIndex(0);
-        game.setAvailableColors(new TankColorOptions().getTankColors());
+        game.getClaimedColors()[requestedColor] = playerName;
 
         GameStorage.getInstance().setGame(game);
         return game;
     }
 
-    public Game joinGame(String playerName, Float[] requestedColor, String gameId)
+    public Game joinGame(String playerName, Integer requestedColor, String gameId)
             throws InvaildParamException, InvaildGameException {
         if (!GameStorage.getInstance().getGames().containsKey(gameId)) {
             throw new InvaildParamException("A game with that ID does not exist.");
@@ -70,6 +68,7 @@ public class GameService {
             throw new InvaildParamException("The given name is already taken for this game ID.");
         }
         Tank newTank = new Tank().initializeTank(requestedColor);
+        requestedGame.getClaimedColors()[requestedColor] = playerName;
         Player newPlayer = new Player(playerName, newTank, currentPlayerCount, 0);
         requestedGame.getPlayers().add(newPlayer);
         GameStorage.getInstance().setGame(requestedGame);

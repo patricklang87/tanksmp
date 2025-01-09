@@ -1,7 +1,7 @@
 package com.plcoding.tanksmp.controllers;
 
 import org.springframework.http.ResponseEntity;
-// import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 public class GameController {
 
     private final GameService gameService;
-    // private final SimpMessagingTemplate simpMessagingTemplate;
+    private final SimpMessagingTemplate simpMessagingTemplate;
 
     @PostMapping("/initialize")
     public ResponseEntity<Game> initialize(@RequestBody InitializeGameDto request) {

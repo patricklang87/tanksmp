@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-// 7:04
 // json-server --watch data/db.json --port 8080
+// https://wanago.io/2022/01/03/websockets-redux-toolkit-query-typescript/
 export const apiSlice = createApi({
     reducerPath: "api",
     baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:8080" }),
@@ -11,10 +11,10 @@ export const apiSlice = createApi({
         //     providesTags: ['Match']
         // }),
         initializeMatch: builder.mutation({
-            query: (playerName) => ({
+            query: ({ playerName, requestedColor, }) => ({
                 url: "/match/initialize",
                 method: "POST",
-                body: { playerName },
+                body: { playerName, requestedColor },
             }),
             invalidatesTags: ["Match"],
         }),

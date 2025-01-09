@@ -5,6 +5,6 @@ import lombok.Data;
 @Data
 public class JoinGameDto {
     private String playerName;
-    private Float[] requestedColor;
+    private Integer requestedColor;
     private String gameId;
 }

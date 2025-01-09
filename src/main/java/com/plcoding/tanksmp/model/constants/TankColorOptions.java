@@ -20,9 +20,4 @@ public class TankColorOptions {
         return tankColorOptions;
     }
 
-    public ArrayList<RgbaColor> removeTankColorOption(int ind) {
-        tankColorOptions.remove(ind);
-        return tankColorOptions;
-    } 
-
 }

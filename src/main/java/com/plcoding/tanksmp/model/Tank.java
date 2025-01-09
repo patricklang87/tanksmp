@@ -7,7 +7,8 @@ import lombok.Data;
 
 @Data
 public class Tank {
-    private Float[] localColor;
+    // private Float[] localColor;
+    private Integer requestedColor;
     private Float[] position;
     private Integer turretAngle;
     private Integer driveDistance;
@@ -17,9 +18,10 @@ public class Tank {
     private TankActions tankActions;
     private TankActionName selectedAction;
 
-    public Tank initializeTank(Float[] requestedColor) {
+    public Tank initializeTank(Integer requestedColor) {
         Tank tank = new Tank();
-        tank.localColor = requestedColor;
+        tank.requestedColor = requestedColor;
+        // tank.localColor = localColor;
         // tank.position //
         tank.turretAngle = 90;
         tank.driveDistance = 0;

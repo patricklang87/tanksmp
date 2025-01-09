@@ -3,6 +3,7 @@ import IsTruthy from "../../components/common/logic/IsTruthy";
 import IsFalsy from "../../components/common/logic/IsFalsy";
 import JoinMatch from "./JoinMatch";
 import CreateNewMatch from "./CreateNewMatch";
+import SelectTankColor from "./SelectTankColor";
 
 const StartScreen = () => {
   const {
@@ -14,7 +15,8 @@ const StartScreen = () => {
     isError,
     error,
     setPlayerName,
-    // setRequestedColor,
+    setRequestedColor,
+    requestedColor,
     setGameId,
     createNewMatch,
     setCreateNewMatch,
@@ -28,6 +30,12 @@ const StartScreen = () => {
         <button onClick={() => setCreateNewMatch(true)}>Create Match</button>
         <button onClick={() => setCreateNewMatch(false)}>Join Match</button>
       </div>
+
+      <SelectTankColor
+        data={data}
+        setRequestedColor={setRequestedColor}
+        requestedColor={requestedColor}
+      />
 
       <IsTruthy value={createNewMatch}>
         <CreateNewMatch
