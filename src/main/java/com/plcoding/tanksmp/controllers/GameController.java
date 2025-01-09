@@ -30,7 +30,11 @@ public class GameController {
     @PostMapping("/initialize")
     public ResponseEntity<Game> initialize(@RequestBody InitializeGameDto request) {
         log.info("start game request: {}", request);
-        return ResponseEntity.ok(gameService.initializeGame(request.getPlayerName(), request.getRequestedColor()));
+        Game game = gameService.initializeGame(request.getPlayerName(), request.getRequestedColor());
+        simpMessagingTemplate.convertAndSend("/topic/match/" +
+                game.getGameId(), game);
+        System.out.println(simpMessagingTemplate.toString());
+        return ResponseEntity.ok(game);
     }
 
     @PostMapping("/join")
