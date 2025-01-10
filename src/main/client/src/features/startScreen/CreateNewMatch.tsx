@@ -11,6 +11,8 @@ export default function CreateNewMatch({
   data,
   isError,
   error,
+  playerName,
+  requestedColor,
 }: {
   handleInitializeMatchClick: (
     e: React.FormEvent<HTMLFormElement>
@@ -20,8 +22,15 @@ export default function CreateNewMatch({
   isSuccess: boolean;
   isError: boolean;
   error: FetchBaseQueryError | SerializedError | undefined;
-  data: any; // create data type object and use here
-}) {
+    data: any; // create data type object and use here
+    playerName: string;
+    requestedColor: number | null;
+  }) {
+  
+  let disableCreateButton = false;
+  if (playerName.length < 3 || !(typeof requestedColor === "number") || isLoading) {
+    disableCreateButton = true;
+  }
   return (
     <form onSubmit={handleInitializeMatchClick}>
       <label className="form-label" htmlFor="playerName">
@@ -35,7 +44,7 @@ export default function CreateNewMatch({
         onChange={(e) => setPlayerName(e.target.value)}
       />
       <br />
-      <button type="submit" disabled={isLoading}>
+      <button type="submit" disabled={disableCreateButton}>
         {isLoading ? "Initializing..." : "Create"}
       </button>
       {isSuccess && <p>Game Id: {data.gameId}</p>}

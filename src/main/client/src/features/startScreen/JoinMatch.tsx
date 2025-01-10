@@ -1,14 +1,21 @@
 import React from "react";
 import { SetStateAction, Dispatch } from "react";
 
-const JoinMatch = ({ handleJoinMatchClick, setGameId, setPlayerName } : {
+const JoinMatch = ({ handleJoinMatchClick, setGameId, setPlayerName, playerName, requestedColor, gameId } : {
   handleJoinMatchClick: (
     e: React.FormEvent<HTMLFormElement>
   ) => Promise<void>;
   setPlayerName: Dispatch<SetStateAction<string>>;
   setGameId: Dispatch<SetStateAction<string>>;
-
+  playerName: string;
+  requestedColor: number | null;
+  gameId: string;
 }) => {
+  let disableJoinButton = false;
+  if (playerName.length < 3 || !(typeof requestedColor === "number") || !gameId.length) {
+    disableJoinButton = true;
+  }
+
   return (
     <form onSubmit={handleJoinMatchClick}>
       <label className="form-label" htmlFor="playerName">
@@ -33,7 +40,7 @@ const JoinMatch = ({ handleJoinMatchClick, setGameId, setPlayerName } : {
       />
 
       <br />
-      <button type="submit">Join</button>
+      <button type="submit" disabled={disableJoinButton}>Join</button>
     </form>
   );
 };

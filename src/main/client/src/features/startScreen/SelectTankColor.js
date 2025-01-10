@@ -5,13 +5,19 @@ const SelectTankColor = ({ data, setRequestedColor, requestedColor, }) => {
     const claimedColors = data?.claimedColors || [];
     const TankSelectionSquare = ({ color, takenBy, index, }) => {
         let borderStyle = "outset";
-        if (index === requestedColor)
+        let borderColor = "yellow";
+        if (index === requestedColor) {
             borderStyle = "inset";
+            borderColor = "blue";
+        }
         return (_jsx("div", { onClick: () => setRequestedColor(index), children: _jsx("div", { style: {
                     backgroundColor: arrayToRgba(color),
                     width: "50px",
                     height: "50px",
                     borderStyle,
+                    borderColor,
+                    borderWidth: "5px",
+                    borderRadius: "10px",
                 }, children: takenBy ? takenBy : "" }) }));
     };
     const availableColors = tankColor.map((color, index) => (_jsx(TankSelectionSquare, { color: color, takenBy: claimedColors[index], index: index }, `tank_color_option_${index}`)));

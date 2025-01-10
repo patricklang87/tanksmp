@@ -51,5 +51,7 @@ export const useStartScreenProps = () => {
     requestedColor,
     createNewMatch,
     setCreateNewMatch,
+    playerName,
+    gameId
   };
 };
