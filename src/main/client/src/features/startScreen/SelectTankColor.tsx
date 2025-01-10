@@ -6,13 +6,14 @@ import { arrayToRgba } from "../../util/color";
 const SelectTankColor = ({
   data,
   setRequestedColor,
-  requestedColor,
+    requestedColor,
 }: {
   data?: any;
   setRequestedColor: Dispatch<SetStateAction<number | null>>;
   requestedColor: number | null;
 }) => {
-  const claimedColors = data?.claimedColors || [];
+    const claimedColors = data?.claimedColors || [];
+    
 
   const TankSelectionSquare = ({
     color,
@@ -24,18 +25,22 @@ const SelectTankColor = ({
     index: number;
   }) => {
     let borderStyle = "outset";
-    if (index === requestedColor) borderStyle = "inset";
+    let borderColor = "yellow";
+    if (index === requestedColor) {
+      borderStyle = "inset";
+      borderColor = "blue";
+    }
     return (
-      <div
-        
-        onClick={() => setRequestedColor(index)}
-      >
+      <div onClick={() => setRequestedColor(index)}>
         <div
           style={{
             backgroundColor: arrayToRgba(color),
             width: "50px",
             height: "50px",
             borderStyle,
+            borderColor,
+            borderWidth: "5px",
+            borderRadius: "10px",
           }}
         >
           {takenBy ? takenBy : ""}
@@ -45,7 +50,7 @@ const SelectTankColor = ({
   };
 
   const availableColors = tankColor.map((color, index) => (
-      <TankSelectionSquare
+    <TankSelectionSquare
       key={`tank_color_option_${index}`}
       color={color}
       takenBy={claimedColors[index]}

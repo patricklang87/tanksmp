@@ -20,6 +20,8 @@ const StartScreen = () => {
     setGameId,
     createNewMatch,
     setCreateNewMatch,
+    playerName,
+    gameId,
   } = useStartScreenProps();
 
   return (
@@ -46,6 +48,8 @@ const StartScreen = () => {
           data={data}
           error={error}
           handleInitializeMatchClick={handleInitializeMatchClick}
+          playerName={playerName}
+          requestedColor={requestedColor}
         />
       </IsTruthy>
 
@@ -54,6 +58,9 @@ const StartScreen = () => {
           setGameId={setGameId}
           setPlayerName={setPlayerName}
           handleJoinMatchClick={handleJoinMatchClick}
+          playerName={playerName}
+          requestedColor={requestedColor}
+          gameId={gameId}
         />
       </IsFalsy>
     </>
