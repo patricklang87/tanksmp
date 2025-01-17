@@ -1,6 +1,9 @@
 package com.plcoding.tanksmp.controllers;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,7 +15,9 @@ import com.plcoding.tanksmp.controllers.dto.JoinGameDto;
 import com.plcoding.tanksmp.controllers.dto.StartGameDto;
 import com.plcoding.tanksmp.exceptions.InvaildGameException;
 import com.plcoding.tanksmp.exceptions.InvaildParamException;
+import com.plcoding.tanksmp.exceptions.NotFoundException;
 import com.plcoding.tanksmp.model.Game;
+import com.plcoding.tanksmp.model.TakeTurn;
 import com.plcoding.tanksmp.service.GameService;
 
 import lombok.AllArgsConstructor;
@@ -31,9 +36,6 @@ public class GameController {
     public ResponseEntity<Game> initialize(@RequestBody InitializeGameDto request) {
         log.info("start game request: {}", request);
         Game game = gameService.initializeGame(request.getPlayerName(), request.getRequestedColor());
-        simpMessagingTemplate.convertAndSend("/topic/match/" +
-                game.getGameId(), game);
-        System.out.println(simpMessagingTemplate.toString());
         return ResponseEntity.ok(game);
     }
 
@@ -44,7 +46,6 @@ public class GameController {
             return ResponseEntity
                     .ok(gameService.joinGame(request.getPlayerName(), request.getRequestedColor(),
                             request.getGameId()));
-
     }
 
     @PostMapping("/start")
@@ -55,15 +56,26 @@ public class GameController {
                 .ok(gameService.startGame(request.getPlayerGameId(), request.getGameId()));
     }
 
-    // @PostMapping("/takeTurn")
-    // public ResponseEntity<Game> gamePlay(@RequestBody GamePlay request) throws
-    // NotFoundException, InvalidGameException {
-    // log.info("game play request: {}", request);
-    // Game game = gameService.takeTurn(request);
-    // simpMessagingTemplate.convertAndSend("/topic/game-progress/" +
-    // game.getGameId(), game);
+    // @PostMapping("/gameplay")
+    // public ResponseEntity<Game> gamePlay(@RequestBody TakeTurn request) throws
+    // InvaildGameException, NotFoundException {
+    //     log.info("game play request: {}", request);
+    //     Game game = gameService.takeTurn(request);
+    //     simpMessagingTemplate.convertAndSend("/topic/game-progress/" +
+    //             game.getGameId(), game);
 
-    // return ResponseEntity.ok(game);
+    //     return ResponseEntity.ok(game);
     // }
+
+    @MessageMapping("/gameplay")
+    @SendTo("/topic/game-progress")
+    public ResponseEntity<Game> gamePlay(@Payload TakeTurn request) {
+        log.info("game play request: {}", request);
+        Game game = gameService.takeTurn(request);
+        simpMessagingTemplate.convertAndSend("/topic/game-progress/" +
+                game.getGameId(), game);
+
+        return ResponseEntity.ok(game);
+    }
 
 }

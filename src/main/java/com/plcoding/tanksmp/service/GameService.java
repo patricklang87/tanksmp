@@ -13,6 +13,7 @@ import com.plcoding.tanksmp.exceptions.InvaildParamException;
 import com.plcoding.tanksmp.model.Game;
 import com.plcoding.tanksmp.model.GameStatus;
 import com.plcoding.tanksmp.model.Player;
+import com.plcoding.tanksmp.model.TakeTurn;
 import com.plcoding.tanksmp.model.Tank;
 import com.plcoding.tanksmp.model.Topography;
 import com.plcoding.tanksmp.model.keywords.ColorSchemas;
@@ -89,4 +90,13 @@ public class GameService {
         return requestedGame;
 
     }
+    
+    // will be updated once turn taking technology implemented
+    public Game takeTurn(TakeTurn takeTurn) {
+        System.out.println(takeTurn);
+        String gameId = takeTurn.getGameId();
+        Game game = GameStorage.getInstance().getGames().get(gameId);
+        return game;
+    }
+    
 }
