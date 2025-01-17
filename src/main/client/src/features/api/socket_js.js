@@ -8,34 +8,11 @@ export const connectToSocket = (gameId) => {
     console.log("created socketjs", socket);
     const stompClient = Stomp.over(socket);
     console.log("stomp client,", stompClient);
-    // stompClient.connect({}, (frame) => {
-    //   console.log("connected to the frame: " + frame);
-    //   stompClient.subscribe("/topic/game-progress/" + gameId, (response) => {
-    //     const data = JSON.parse(response.body);
-    //       console.log(data);
-    //       // displayResponse(data);
-    //   });
-    // });
     stompClient.connect([], () => {
         stompClient.subscribe("/topic/game-progress/" + gameId, (message) => {
             const recievedMessage = JSON.parse(message.body);
             console.log("message recieved", recievedMessage);
-            // setMessages((prevMessages: ListMessage[]) => [
-            //   ...prevMessages,
-            //   recievedMessage,
-            // ]);
         });
     });
+    return stompClient;
 };
-// const socket = new SockJS("http://localhost:8080/ws");
-// const client = Stomp.over(socket);
-// client.connect([], () => {
-//   client.subscribe("/topic/messages", (message) => {
-//     const recievedMessage = JSON.parse(message.body);
-//     console.log("message recieved", recievedMessage)
-//     setMessages((prevMessages: ListMessage[]) => [
-//       ...prevMessages,
-//       recievedMessage,
-//     ]);
-//   });
-// });

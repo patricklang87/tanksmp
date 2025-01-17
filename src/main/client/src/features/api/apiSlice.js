@@ -12,6 +12,41 @@ export const apiSlice = createApi({
                 body: { playerName, requestedColor },
             }),
             async onCacheEntryAdded(arg, { cacheDataLoaded, cacheEntryRemoved }) {
+                const cacheData = await cacheDataLoaded;
+                console.log("gameId", cacheData.data.gameId);
+                const socket = connectToSocket(cacheData.data.gameId);
+                try {
+                    // const listener = (event: MessageEvent) => {
+                    //   const data = JSON.parse(event.data);
+                    // if (!isMessage(data) || data.channel !== arg) return;
+                    // console.log("data receieved", data);
+                    // updateCachedData((draft) => {
+                    //   draft.push(data);
+                    // });
+                    // };
+                    // ws.addEventListener("message", listener);
+                }
+                catch (err) {
+                    console.log("error: ", err);
+                    // no-op in case `cacheEntryRemoved` resolves before `cacheDataLoaded`,
+                    // in which case `cacheDataLoaded` will throw
+                }
+                // cacheEntryRemoved will resolve when the cache subscription is no longer active
+                await cacheEntryRemoved;
+                // perform cleanup steps once the `cacheEntryRemoved` promise resolves
+                socket.disconnect(() => {
+                    console.log("Stomp client disconnected");
+                });
+            },
+            invalidatesTags: ["Match"],
+        }),
+        joinMatch: builder.mutation({
+            query: ({ playerName, gameId, requestedColor, }) => ({
+                url: "/match/join",
+                method: "POST",
+                body: { playerName, gameId, requestedColor },
+            }),
+            async onCacheEntryAdded(arg, { cacheDataLoaded, cacheEntryRemoved }) {
                 try {
                     const cacheData = await cacheDataLoaded;
                     console.log("gameId", cacheData.data.gameId);
@@ -36,14 +71,6 @@ export const apiSlice = createApi({
                 // perform cleanup steps once the `cacheEntryRemoved` promise resolves
                 // ws.close();
             },
-            invalidatesTags: ["Match"],
-        }),
-        joinMatch: builder.mutation({
-            query: ({ playerName, gameId, requestedColor, }) => ({
-                url: "/match/join",
-                method: "POST",
-                body: { playerName, gameId, requestedColor },
-            }),
             invalidatesTags: ["Match"],
         }),
         startMatch: builder.mutation({

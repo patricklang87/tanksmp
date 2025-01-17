@@ -43,9 +43,11 @@ public class GameController {
     public ResponseEntity<Game> join(@RequestBody JoinGameDto request)
             throws InvaildGameException, InvaildParamException {
         log.info("join request: {}", request);
+        Game game = gameService.joinGame(request.getPlayerName(), request.getRequestedColor(), request.getGameId());
+        simpMessagingTemplate.convertAndSend("/topic/game-progress/" +
+        game.getGameId(), game);
             return ResponseEntity
-                    .ok(gameService.joinGame(request.getPlayerName(), request.getRequestedColor(),
-                            request.getGameId()));
+                    .ok(game);
     }
 
     @PostMapping("/start")
@@ -56,20 +58,9 @@ public class GameController {
                 .ok(gameService.startGame(request.getPlayerGameId(), request.getGameId()));
     }
 
-    // @PostMapping("/gameplay")
-    // public ResponseEntity<Game> gamePlay(@RequestBody TakeTurn request) throws
-    // InvaildGameException, NotFoundException {
-    //     log.info("game play request: {}", request);
-    //     Game game = gameService.takeTurn(request);
-    //     simpMessagingTemplate.convertAndSend("/topic/game-progress/" +
-    //             game.getGameId(), game);
-
-    //     return ResponseEntity.ok(game);
-    // }
-
-    @MessageMapping("/gameplay")
-    @SendTo("/topic/game-progress")
-    public ResponseEntity<Game> gamePlay(@Payload TakeTurn request) {
+    @PostMapping("/gameplay")
+    public ResponseEntity<Game> gamePlay(@RequestBody TakeTurn request) throws
+    InvaildGameException, NotFoundException {
         log.info("game play request: {}", request);
         Game game = gameService.takeTurn(request);
         simpMessagingTemplate.convertAndSend("/topic/game-progress/" +
@@ -77,5 +68,16 @@ public class GameController {
 
         return ResponseEntity.ok(game);
     }
+
+    // @MessageMapping("/gameplay")
+    // @SendTo("/topic/game-progress")
+    // public ResponseEntity<Game> gamePlay(@Payload TakeTurn request) {
+    //     log.info("game play request: {}", request);
+    //     Game game = gameService.takeTurn(request);
+    //     simpMessagingTemplate.convertAndSend("/topic/game-progress/" +
+    //             game.getGameId(), game);
+
+    //     return ResponseEntity.ok(game);
+    // }
 
 }

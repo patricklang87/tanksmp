@@ -12,7 +12,7 @@ export const useStartScreenProps = () => {
 
   const [initializeMatch, { data, isLoading, isSuccess, isError, error }] =
     useInitializeMatchMutation();
-  const [joinMatch] = useJoinMatchMutation();
+  const [joinMatch, { data: joinMatchData }] = useJoinMatchMutation();
 
   const handleInitializeMatchClick = async (
     e: React.FormEvent<HTMLFormElement>
@@ -30,7 +30,7 @@ export const useStartScreenProps = () => {
   const handleJoinMatchClick = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const res = await joinMatch({ playerName, gameId, requestedColor });
+      const res = await joinMatch({ playerName, gameId, requestedColor }).unwrap();
       console.log("join", res.data);
     } catch (err) {
       console.error("Failed to join match", err);
@@ -40,7 +40,7 @@ export const useStartScreenProps = () => {
   return {
     handleInitializeMatchClick,
     handleJoinMatchClick,
-    data,
+    data: data ? data : joinMatchData,
     isLoading,
     isSuccess,
     isError,
