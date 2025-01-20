@@ -5,14 +5,11 @@ import { SerializedError } from "@reduxjs/toolkit";
 
 export default function CreateNewMatch({
   handleInitializeMatchClick,
-  setPlayerName,
   isLoading,
   isSuccess,
   data,
   isError,
   error,
-  playerName,
-  requestedColor,
 }: {
   handleInitializeMatchClick: (
     e: React.FormEvent<HTMLFormElement>
@@ -27,24 +24,10 @@ export default function CreateNewMatch({
     requestedColor: number | null;
   }) {
   
-  let disableCreateButton = false;
-  if (playerName.length < 3 || !(typeof requestedColor === "number") || isLoading) {
-    disableCreateButton = true;
-  }
+
   return (
     <form onSubmit={handleInitializeMatchClick}>
-      <label className="form-label" htmlFor="playerName">
-        Player Name:{" "}
-      </label>
-      <input
-        type="text"
-        id="playerName"
-        className="form-control"
-        maxLength={8}
-        onChange={(e) => setPlayerName(e.target.value)}
-      />
-      <br />
-      <button type="submit" disabled={disableCreateButton}>
+      <button type="submit">
         {isLoading ? "Initializing..." : "Create"}
       </button>
       {isSuccess && <p>Game Id: {data.gameId}</p>}

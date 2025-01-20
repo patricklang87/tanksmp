@@ -27,6 +27,17 @@ export const useStartScreenProps = () => {
     }
   };
 
+  const handleSubscribeMatchClick = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    // update and replace with subscribe match
+    try {
+      const res = await joinMatch({ playerName, gameId: "1", requestedColor: 1 });
+      console.log("join", res.data);
+    } catch (err) {
+      console.error("Failed to join match", err);
+    }
+  };
+
   const handleJoinMatchClick = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
@@ -44,7 +55,12 @@ export const useStartScreenProps = () => {
   return {
     handleInitializeMatchClick,
     handleJoinMatchClick,
+    handleSubscribeMatchClick,
     data: data ? data : joinMatchData,
+    isLoading,
+    isSuccess,
+    isError,
+    error,
     setPlayerName,
     setGameId,
     setRequestedColor,
@@ -53,9 +69,6 @@ export const useStartScreenProps = () => {
     setCreateNewMatch,
     playerName,
     gameId,
-    isLoading,
-    isSuccess,
-    isError,
-    error,
+    
   };
 };
