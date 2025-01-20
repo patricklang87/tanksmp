@@ -23,17 +23,17 @@ import com.plcoding.tanksmp.storage.GameStorage;
 @AllArgsConstructor
 public class GameService {
 
-    public Game initializeGame(String playerName, Integer requestedColor) {
+    public Game initializeGame() {
         Game game = new Game();
         game.setGameId(UUID.randomUUID().toString());
         ArrayList<Point2D> topography = new Topography().createInitialTopography(1400, 800);
 
         game.setTopography(topography);
         game.setGameStatus(GameStatus.NEW);
-        Tank newTank = new Tank().initializeTank(requestedColor);
-        Player firstPlayer = new Player(playerName, newTank, 0, 0);
+        // Tank newTank = new Tank().initializeTank(requestedColor);
+        // Player firstPlayer = new Player(playerName, newTank, 0, 0);
         ArrayList<Player> players = new ArrayList<Player>();
-        players.add(firstPlayer);
+        // players.add(firstPlayer);
         game.setPlayers(players);
 
         String colorSchema;
@@ -44,7 +44,7 @@ public class GameService {
         }
         game.setColorSchema(colorSchema);
         game.setCurrentPlayerIndex(0);
-        game.getClaimedColors()[requestedColor] = playerName;
+        // game.getClaimedColors()[requestedColor] = playerName;
 
         GameStorage.getInstance().setGame(game);
         return game;

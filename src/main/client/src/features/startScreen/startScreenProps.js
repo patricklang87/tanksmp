@@ -1,16 +1,16 @@
 import { useState } from "react";
-import { useInitializeMatchMutation, useJoinMatchMutation, } from "../api/apiSlice";
+import { useLazyInitializeMatchQuery, useJoinMatchMutation, } from "../api/matchSlice";
 export const useStartScreenProps = () => {
     const [playerName, setPlayerName] = useState("");
     const [requestedColor, setRequestedColor] = useState(null);
     const [gameId, setGameId] = useState("");
     const [createNewMatch, setCreateNewMatch] = useState(true);
-    const [initializeMatch, { data, isLoading, isSuccess, isError, error }] = useInitializeMatchMutation();
+    const [initializeMatch, { data, isLoading, isSuccess, isError, error }] = useLazyInitializeMatchQuery();
     const [joinMatch, { data: joinMatchData }] = useJoinMatchMutation();
     const handleInitializeMatchClick = async (e) => {
         e.preventDefault();
         try {
-            const res = await initializeMatch({ playerName, requestedColor }).unwrap();
+            const res = await initializeMatch("null").unwrap();
             console.log("initialize", res);
             setPlayerName("");
         }
@@ -21,7 +21,11 @@ export const useStartScreenProps = () => {
     const handleJoinMatchClick = async (e) => {
         e.preventDefault();
         try {
-            const res = await joinMatch({ playerName, gameId, requestedColor }).unwrap();
+            const res = await joinMatch({
+                playerName,
+                gameId,
+                requestedColor,
+            }).unwrap();
             console.log("join", res.data);
         }
         catch (err) {
@@ -32,10 +36,6 @@ export const useStartScreenProps = () => {
         handleInitializeMatchClick,
         handleJoinMatchClick,
         data: data ? data : joinMatchData,
-        isLoading,
-        isSuccess,
-        isError,
-        error,
         setPlayerName,
         setGameId,
         setRequestedColor,
@@ -43,6 +43,10 @@ export const useStartScreenProps = () => {
         createNewMatch,
         setCreateNewMatch,
         playerName,
-        gameId
+        gameId,
+        isLoading,
+        isSuccess,
+        isError,
+        error,
     };
 };

@@ -5,6 +5,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,10 +33,10 @@ public class GameController {
     private final GameService gameService;
     private final SimpMessagingTemplate simpMessagingTemplate;
 
-    @PostMapping("/initialize")
-    public ResponseEntity<Game> initialize(@RequestBody InitializeGameDto request) {
-        log.info("start game request: {}", request);
-        Game game = gameService.initializeGame(request.getPlayerName(), request.getRequestedColor());
+    @GetMapping("/initialize")
+    public ResponseEntity<Game> initialize() {
+        log.info("game code requested");
+        Game game = gameService.initializeGame();
         return ResponseEntity.ok(game);
     }
 
