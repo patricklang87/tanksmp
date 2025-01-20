@@ -3,12 +3,13 @@ import IsTruthy from "../../components/common/logic/IsTruthy";
 import IsFalsy from "../../components/common/logic/IsFalsy";
 import JoinMatch from "./JoinMatch";
 import CreateNewMatch from "./CreateNewMatch";
-import SelectTankColor from "./SelectTankColor";
+import SubscribeMatch from "./SubscribeMatch";
 
 const StartScreen = () => {
   const {
     handleInitializeMatchClick,
     handleJoinMatchClick,
+    handleSubscribeMatchClick,
     data,
     isLoading,
     isSuccess,
@@ -22,6 +23,7 @@ const StartScreen = () => {
     setCreateNewMatch,
     playerName,
     gameId,
+   
   } = useStartScreenProps();
 
   return (
@@ -33,12 +35,8 @@ const StartScreen = () => {
         <button onClick={() => setCreateNewMatch(false)}>Join Match</button>
       </div>
 
-      <SelectTankColor
-        data={data}
-        setRequestedColor={setRequestedColor}
-        requestedColor={requestedColor}
-      />
 
+      <IsFalsy value={data}>
       <IsTruthy value={createNewMatch}>
         <CreateNewMatch
           setPlayerName={setPlayerName}
@@ -54,6 +52,15 @@ const StartScreen = () => {
       </IsTruthy>
 
       <IsFalsy value={createNewMatch}>
+        <SubscribeMatch
+          handleSubscribeMatchClick={handleSubscribeMatchClick}
+          setGameId={setGameId}
+          gameId={gameId}
+          />
+          </IsFalsy>
+        </IsFalsy>
+
+      <IsTruthy value={data}>
         <JoinMatch
           setGameId={setGameId}
           setPlayerName={setPlayerName}
@@ -61,8 +68,10 @@ const StartScreen = () => {
           playerName={playerName}
           requestedColor={requestedColor}
           gameId={gameId}
+          data={data}
+          setRequestedColor={setRequestedColor}
         />
-      </IsFalsy>
+      </IsTruthy>
     </>
   );
 };
