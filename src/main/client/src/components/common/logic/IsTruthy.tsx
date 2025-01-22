@@ -8,7 +8,7 @@ const IsTruthy = ({
   value: string | number | boolean;
   validationFunction?: (value: string | number | boolean) => boolean;
   children: React.ReactNode;
-}) => {
+  }) => {
   return (validationFunction(value) && children) || null;
 };
 

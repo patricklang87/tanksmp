@@ -8,7 +8,7 @@ const IsFalsy = ({
   value: string | number | boolean;
   validationFunction?: (value: string | number | boolean) => boolean | null;
   children: React.ReactNode;
-}) => {
+  }) => {
   return validationFunction(value) ? null : children;
 };
 

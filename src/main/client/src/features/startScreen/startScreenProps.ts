@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   useLazyInitializeMatchQuery,
   useJoinMatchMutation,
+  useLazySubscribeMatchQuery,
 } from "../api/matchSlice";
 
 export const useStartScreenProps = () => {
@@ -9,10 +10,13 @@ export const useStartScreenProps = () => {
   const [requestedColor, setRequestedColor] = useState<number | null>(null);
   const [gameId, setGameId] = useState<string>("");
   const [createNewMatch, setCreateNewMatch] = useState<boolean>(true);
+  const [isGameCreator, setIsGameCreator] = useState<boolean>(false);
 
-  const [initializeMatch, { data, isLoading, isSuccess, isError, error }] =
+  const [initializeMatch, { isLoading, isSuccess, isError, error }] =
     useLazyInitializeMatchQuery();
-  const [joinMatch, { data: joinMatchData }] = useJoinMatchMutation();
+  const [subscribeMatch, { data }] = useLazySubscribeMatchQuery();
+  const [joinMatch] = useJoinMatchMutation();
+  const [subscribed, setSubscribed] = useState<boolean>(false);
 
   const handleInitializeMatchClick = async (
     e: React.FormEvent<HTMLFormElement>
@@ -20,8 +24,11 @@ export const useStartScreenProps = () => {
     e.preventDefault();
     try {
       const res = await initializeMatch("null").unwrap();
-      console.log("initialize", res);
+      console.log("initialize", res, res.gameId );
       setPlayerName("");
+      setGameId(res?.gameId);
+      setCreateNewMatch(false);
+      setIsGameCreator(true);
     } catch (err) {
       console.error("Failed to initialize match:", err);
     }
@@ -31,10 +38,11 @@ export const useStartScreenProps = () => {
     e.preventDefault();
     // update and replace with subscribe match
     try {
-      const res = await joinMatch({ playerName, gameId: "1", requestedColor: 1 });
-      console.log("join", res.data);
+      const res = await subscribeMatch(gameId);
+      console.log("subscribe", res.data);
+      setSubscribed(true);
     } catch (err) {
-      console.error("Failed to join match", err);
+      console.error("Failed to subscribe to match", err);
     }
   };
 
@@ -46,7 +54,7 @@ export const useStartScreenProps = () => {
         gameId,
         requestedColor,
       }).unwrap();
-      console.log("join", res.data);
+      console.log("join", res);
     } catch (err) {
       console.error("Failed to join match", err);
     }
@@ -56,7 +64,7 @@ export const useStartScreenProps = () => {
     handleInitializeMatchClick,
     handleJoinMatchClick,
     handleSubscribeMatchClick,
-    data: data ? data : joinMatchData,
+    data,
     isLoading,
     isSuccess,
     isError,
@@ -69,6 +77,7 @@ export const useStartScreenProps = () => {
     setCreateNewMatch,
     playerName,
     gameId,
-    
+    subscribed,
+    isGameCreator,
   };
 };

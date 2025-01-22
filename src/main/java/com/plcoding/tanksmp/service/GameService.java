@@ -26,6 +26,7 @@ public class GameService {
     public Game initializeGame() {
         Game game = new Game();
         game.setGameId(UUID.randomUUID().toString());
+        game.setId(game.getGameId());
         ArrayList<Point2D> topography = new Topography().createInitialTopography(1400, 800);
 
         game.setTopography(topography);
