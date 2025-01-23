@@ -72,8 +72,11 @@ public class GameController {
     public ResponseEntity<Game> start(@RequestBody StartGameDto request)
             throws InvaildGameException, InvaildParamException {
         log.info("start request: {}", request);
+        Game game = gameService.startGame(request.getGameId());
+        simpMessagingTemplate.convertAndSend("/topic/game-progress/" +
+        game.getGameId(), game);
         return ResponseEntity
-                .ok(gameService.startGame(request.getPlayerGameId(), request.getGameId()));
+                .ok(game);
     }
 
     @PostMapping("/gameplay")

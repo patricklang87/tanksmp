@@ -1,19 +1,28 @@
-import React from "react";
+import { useState } from "react";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import IsTruthy from "../../components/common/logic/IsTruthy";
+import { LuCopy } from "react-icons/lu";
+import { LuCopyCheck } from "react-icons/lu";
 
 const GameIdDisplay = ({ gameId }: { gameId: string }) => {
+  const [copied, setCopied] = useState<boolean>(false);
+
   return (
     <IsTruthy value={!!gameId}>
-      <CopyToClipboard onCopy={() => console.log("copied: ", gameId)} text={gameId}>
-        <>
-          {" "}
+      <div className="game-id-container">
+        <div>
           <p>
-            <strong>Joining Game:</strong> {gameId}
+            <strong>Game Id</strong>
+            <br />
+            {gameId}
           </p>
-          <button>Copy Game ID</button>
-        </>
-      </CopyToClipboard>
+        </div>
+        <div className="game-id-flex-item">
+          <CopyToClipboard onCopy={() => setCopied(true)} text={gameId}>
+            <button>{copied ? <LuCopyCheck /> : <LuCopy />}</button>
+          </CopyToClipboard>
+        </div>
+      </div>
     </IsTruthy>
   );
 };

@@ -31,10 +31,7 @@ public class GameService {
 
         game.setTopography(topography);
         game.setGameStatus(GameStatus.NEW);
-        // Tank newTank = new Tank().initializeTank(requestedColor);
-        // Player firstPlayer = new Player(playerName, newTank, 0, 0);
         ArrayList<Player> players = new ArrayList<Player>();
-        // players.add(firstPlayer);
         game.setPlayers(players);
 
         String colorSchema;
@@ -45,7 +42,6 @@ public class GameService {
         }
         game.setColorSchema(colorSchema);
         game.setCurrentPlayerIndex(0);
-        // game.getClaimedColors()[requestedColor] = playerName;
 
         GameStorage.getInstance().setGame(game);
         return game;
@@ -78,7 +74,7 @@ public class GameService {
         return requestedGame;
     }
 
-    public Game startGame(Integer playerGameId, String gameId) throws InvaildParamException, InvaildGameException {
+    public Game startGame(String gameId) throws InvaildParamException, InvaildGameException {
         Game requestedGame = GameStorage.getInstance().getGames().get(gameId);
         if (!GameStorage.getInstance().getGames().containsKey(gameId)) {
             throw new InvaildParamException("A game with that ID does not exist.");

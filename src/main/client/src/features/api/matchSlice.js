@@ -41,10 +41,10 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
             }),
         }),
         startMatch: builder.mutation({
-            query: ({ playerName, gameId, }) => ({
+            query: (gameId) => ({
                 url: "/match/start",
                 method: "POST",
-                body: { playerName, gameId },
+                body: { gameId },
             }),
         }),
     }),

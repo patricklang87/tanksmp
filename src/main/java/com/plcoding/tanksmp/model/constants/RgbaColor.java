@@ -11,15 +11,4 @@ public class RgbaColor {
     public float[] getColor() {
         return color;
     }
-
-    // public String getColorString() {
-    //     String rgbaColor = "";
-    //     for (int i = 0; i < this.color.length; i++) {
-    //         rgbaColor += this.color[i];
-    //         if (i != this.color.length - 1) {
-    //             rgbaColor += ", ";
-    //         }
-    //     }
-    //     return rgbaColor;
-    // }
 }

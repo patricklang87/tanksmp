@@ -1,4 +1,3 @@
-
 import { connectToSocket } from "./socket_js";
 import apiSlice from "./apiSlice";
 
@@ -29,12 +28,8 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
         gameId,
         { cacheDataLoaded, cacheEntryRemoved, updateCachedData }
       ) {
-        
-
         const stompClient = connectToSocket();
         try {
-
-
           await cacheDataLoaded;
 
           stompClient.connect([], () => {
@@ -42,15 +37,14 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
               "/topic/game-progress/" + gameId,
               (message) => {
                 const recievedMessage = JSON.parse(message.body);
-               
+
                 updateCachedData((draft) => {
                   draft.claimedColors = recievedMessage.claimedColors;
                   draft.players = recievedMessage.players;
-                })
+                });
               }
             );
           });
-
         } catch (err) {
           console.log("error: ", err);
         }
@@ -58,7 +52,7 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
         await cacheEntryRemoved;
         // perform cleanup steps once the `cacheEntryRemoved` promise resolves
         stompClient.disconnect(() => {
-          "Disconnecting from Stomp client."
+          "Disconnecting from Stomp client.";
         });
       },
       providesTags: ["Match"],
@@ -79,16 +73,10 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
       }),
     }),
     startMatch: builder.mutation({
-      query: ({
-        playerName,
-        gameId,
-      }: {
-        playerName: string;
-        gameId: string;
-      }) => ({
+      query: (gameId) => ({
         url: "/match/start",
         method: "POST",
-        body: { playerName, gameId },
+        body: { gameId },
       }),
     }),
   }),

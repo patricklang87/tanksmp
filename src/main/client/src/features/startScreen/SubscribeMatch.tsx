@@ -38,7 +38,7 @@ const SubscribeMatch = ({
         </IsFalsy>
         <br />
         <button type="submit" disabled={!gameId}>
-          Subscribe
+          { isGameCreator ? "Continue" : "Subscribe" }
         </button>
       </form>
     </>

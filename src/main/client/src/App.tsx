@@ -2,11 +2,8 @@ import "./App.css";
 import StartScreen from "./features/startScreen/StartScreen";
 
 function App() {
-  return (
-    <>
-      <StartScreen />
-    </>
-  );
+
+  return <StartScreen />;
 }
 
 export default App;
