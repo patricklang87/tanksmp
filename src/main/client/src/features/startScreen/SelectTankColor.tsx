@@ -6,14 +6,13 @@ import { arrayToRgba } from "../../util/color";
 const SelectTankColor = ({
   data,
   setRequestedColor,
-    requestedColor,
+  requestedColor,
 }: {
   data?: any;
   setRequestedColor: Dispatch<SetStateAction<number | null>>;
   requestedColor: number | null;
 }) => {
-    const claimedColors = data?.claimedColors || [];
-    
+  const claimedColors = data?.claimedColors || [];
 
   const TankSelectionSquare = ({
     color,
@@ -30,18 +29,23 @@ const SelectTankColor = ({
       borderStyle = "inset";
       borderColor = "blue";
     }
+    if (takenBy) {
+      borderStyle = "inset";
+      borderColor = "lightgrey";
+    }
     return (
-      <div onClick={() => setRequestedColor(index)}>
+      <div onClick={() => {
+        if (!takenBy) {
+          setRequestedColor(index)
+        }
+      }}>
         <div
           style={{
             backgroundColor: arrayToRgba(color),
-            width: "50px",
-            height: "50px",
             borderStyle,
             borderColor,
-            borderWidth: "5px",
-            borderRadius: "10px",
           }}
+          className="tank-color-option"
         >
           {takenBy ? takenBy : ""}
         </div>
@@ -57,24 +61,17 @@ const SelectTankColor = ({
       index={index}
     />
   ));
-  // if (data) {
-  //     const claimedColors = new Set()
-  //     availableColors =
-  // }
 
   return (
-    <div>
+    <div className="select-tank-color-container">
+      <p>
+        <strong>Select Tank Color</strong>
+      </p>
       <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          justifyContent: "space-between",
-        }}
+        className="tank-colors-container"
       >
         {availableColors}
       </div>
-
-      <p>Select Tank Color</p>
     </div>
   );
 };

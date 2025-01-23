@@ -10,6 +10,7 @@ import lombok.Data;
 @Data
 public class Game {
     private String gameId;
+    private String id;
     private ArrayList<Player> players;
     private GameStatus gameStatus;
     private ArrayList<Point2D> topography;

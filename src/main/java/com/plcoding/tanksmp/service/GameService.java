@@ -13,6 +13,7 @@ import com.plcoding.tanksmp.exceptions.InvaildParamException;
 import com.plcoding.tanksmp.model.Game;
 import com.plcoding.tanksmp.model.GameStatus;
 import com.plcoding.tanksmp.model.Player;
+import com.plcoding.tanksmp.model.TakeTurn;
 import com.plcoding.tanksmp.model.Tank;
 import com.plcoding.tanksmp.model.Topography;
 import com.plcoding.tanksmp.model.keywords.ColorSchemas;
@@ -22,17 +23,15 @@ import com.plcoding.tanksmp.storage.GameStorage;
 @AllArgsConstructor
 public class GameService {
 
-    public Game initializeGame(String playerName, Integer requestedColor) {
+    public Game initializeGame() {
         Game game = new Game();
         game.setGameId(UUID.randomUUID().toString());
+        game.setId(game.getGameId());
         ArrayList<Point2D> topography = new Topography().createInitialTopography(1400, 800);
 
         game.setTopography(topography);
         game.setGameStatus(GameStatus.NEW);
-        Tank newTank = new Tank().initializeTank(requestedColor);
-        Player firstPlayer = new Player(playerName, newTank, 0, 0);
         ArrayList<Player> players = new ArrayList<Player>();
-        players.add(firstPlayer);
         game.setPlayers(players);
 
         String colorSchema;
@@ -43,7 +42,6 @@ public class GameService {
         }
         game.setColorSchema(colorSchema);
         game.setCurrentPlayerIndex(0);
-        game.getClaimedColors()[requestedColor] = playerName;
 
         GameStorage.getInstance().setGame(game);
         return game;
@@ -76,7 +74,7 @@ public class GameService {
         return requestedGame;
     }
 
-    public Game startGame(Integer playerGameId, String gameId) throws InvaildParamException, InvaildGameException {
+    public Game startGame(String gameId) throws InvaildParamException, InvaildGameException {
         Game requestedGame = GameStorage.getInstance().getGames().get(gameId);
         if (!GameStorage.getInstance().getGames().containsKey(gameId)) {
             throw new InvaildParamException("A game with that ID does not exist.");
@@ -89,4 +87,13 @@ public class GameService {
         return requestedGame;
 
     }
+    
+    // will be updated once turn taking technology implemented
+    public Game takeTurn(TakeTurn takeTurn) {
+        System.out.println(takeTurn);
+        String gameId = takeTurn.getGameId();
+        Game game = GameStorage.getInstance().getGames().get(gameId);
+        return game;
+    }
+    
 }

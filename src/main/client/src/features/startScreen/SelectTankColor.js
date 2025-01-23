@@ -10,25 +10,21 @@ const SelectTankColor = ({ data, setRequestedColor, requestedColor, }) => {
             borderStyle = "inset";
             borderColor = "blue";
         }
-        return (_jsx("div", { onClick: () => setRequestedColor(index), children: _jsx("div", { style: {
+        if (takenBy) {
+            borderStyle = "inset";
+            borderColor = "lightgrey";
+        }
+        return (_jsx("div", { onClick: () => {
+                if (!takenBy) {
+                    setRequestedColor(index);
+                }
+            }, children: _jsx("div", { style: {
                     backgroundColor: arrayToRgba(color),
-                    width: "50px",
-                    height: "50px",
                     borderStyle,
                     borderColor,
-                    borderWidth: "5px",
-                    borderRadius: "10px",
-                }, children: takenBy ? takenBy : "" }) }));
+                }, className: "tank-color-option", children: takenBy ? takenBy : "" }) }));
     };
     const availableColors = tankColor.map((color, index) => (_jsx(TankSelectionSquare, { color: color, takenBy: claimedColors[index], index: index }, `tank_color_option_${index}`)));
-    // if (data) {
-    //     const claimedColors = new Set()
-    //     availableColors =
-    // }
-    return (_jsxs("div", { children: [_jsx("div", { style: {
-                    display: "flex",
-                    flexWrap: "wrap",
-                    justifyContent: "space-between",
-                }, children: availableColors }), _jsx("p", { children: "Select Tank Color" })] }));
+    return (_jsxs("div", { className: "select-tank-color-container", children: [_jsx("p", { children: _jsx("strong", { children: "Select Tank Color" }) }), _jsx("div", { className: "tank-colors-container", children: availableColors })] }));
 };
 export default SelectTankColor;

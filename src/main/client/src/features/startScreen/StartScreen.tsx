@@ -1,15 +1,17 @@
+import { useEffect } from "react";
 import { useStartScreenProps } from "./startScreenProps";
 import IsTruthy from "../../components/common/logic/IsTruthy";
-import IsFalsy from "../../components/common/logic/IsFalsy";
 import JoinMatch from "./JoinMatch";
-import CreateNewMatch from "./CreateNewMatch";
 import SubscribeMatch from "./SubscribeMatch";
+import "./startScreen.css";
+import StartOrJoin from "./CreateOrJoin";
 
 const StartScreen = () => {
   const {
     handleInitializeMatchClick,
     handleJoinMatchClick,
     handleSubscribeMatchClick,
+    handleStartMatchClick,
     data,
     isLoading,
     isSuccess,
@@ -19,57 +21,55 @@ const StartScreen = () => {
     setRequestedColor,
     requestedColor,
     setGameId,
-    createNewMatch,
-    setCreateNewMatch,
     playerName,
     gameId,
-   
+    isGameCreator,
+    selectedPage,
+    setSelectedPage,
+    joinedMatch,
   } = useStartScreenProps();
+
+  useEffect(() => {
+    console.log("start data", data);
+  }, [data]);
 
   return (
     <>
       <h1 className="title-card">Tanks fer Nuthin'!</h1>
 
-      <div>
-        <button onClick={() => setCreateNewMatch(true)}>Create Match</button>
-        <button onClick={() => setCreateNewMatch(false)}>Join Match</button>
-      </div>
-
-
-      <IsFalsy value={data}>
-      <IsTruthy value={createNewMatch}>
-        <CreateNewMatch
-          setPlayerName={setPlayerName}
+      <IsTruthy value={selectedPage === 1}>
+        <StartOrJoin
+          setSelectedPage={setSelectedPage}
           isError={isError}
           isSuccess={isSuccess}
           isLoading={isLoading}
-          data={data}
           error={error}
           handleInitializeMatchClick={handleInitializeMatchClick}
-          playerName={playerName}
-          requestedColor={requestedColor}
         />
       </IsTruthy>
 
-      <IsFalsy value={createNewMatch}>
+      <IsTruthy value={selectedPage === 3}>
         <SubscribeMatch
           handleSubscribeMatchClick={handleSubscribeMatchClick}
           setGameId={setGameId}
           gameId={gameId}
-          />
-          </IsFalsy>
-        </IsFalsy>
+          isGameCreator={isGameCreator}
+        />
+      </IsTruthy>
 
-      <IsTruthy value={data}>
+      <IsTruthy value={selectedPage === 4}>
         <JoinMatch
           setGameId={setGameId}
           setPlayerName={setPlayerName}
           handleJoinMatchClick={handleJoinMatchClick}
+          handleStartMatchClick={handleStartMatchClick}
           playerName={playerName}
           requestedColor={requestedColor}
           gameId={gameId}
           data={data}
           setRequestedColor={setRequestedColor}
+          joinedMatch={joinedMatch}
+          isGameCreator={isGameCreator}
         />
       </IsTruthy>
     </>
