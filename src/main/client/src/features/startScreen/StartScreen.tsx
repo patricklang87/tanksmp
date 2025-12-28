@@ -35,7 +35,7 @@ const StartScreen = () => {
 
   return (
     <>
-      <h1 className="title-card">Tanks fer Nuthin'!</h1>
+      <h1 className="title-card">Tanks fer Nuffin'!</h1>
 
       <IsTruthy value={selectedPage === 1}>
         <StartOrJoin
