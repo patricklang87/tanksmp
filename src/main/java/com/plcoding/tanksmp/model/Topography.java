@@ -36,11 +36,17 @@ public class Topography {
                     negativeOrPositive *
                     canvasHeight *
                     maxVariationCoefficient *
-                    (float) Math.random();
+                          (float) Math.random();
+                  System.out.println("variation: " + variation.toString());
+                  
                   Float currentY = previousY + variation;
+                  System.out.println("previousY: " + previousY.toString());
+                  System.out.println("currentY: " + currentY.toString());
                   if (currentY > maxHeight) currentY = maxHeight;
                   if (currentY < 0) currentY = 0f;
-                  Point2D nextPoint = new Point2D(currentX, canvasHeight - currentY);
+                  // Point2D nextPoint = new Point2D(currentX, canvasHeight - currentY);
+                  Point2D nextPoint = new Point2D(currentX, currentY);
+                  
                   points.add(nextPoint);
                   incrementCount++;
                 }

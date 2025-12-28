@@ -28,7 +28,7 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
         gameId,
         { cacheDataLoaded, cacheEntryRemoved, updateCachedData }
       ) {
-        const stompClient = connectToSocket();
+        const stompClient = connectToSocket()
         try {
           await cacheDataLoaded;
 
@@ -41,7 +41,9 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
                 updateCachedData((draft) => {
                   draft.claimedColors = recievedMessage.claimedColors;
                   draft.players = recievedMessage.players;
+                  draft.gameStatus = recievedMessage.gameStatus;
                 });
+                
               }
             );
           });
@@ -82,12 +84,16 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
   }),
 });
 
+
 export const {
   //   useGetMatchesQuery,
   useStartMatchMutation,
   useJoinMatchMutation,
   useLazyInitializeMatchQuery,
   useLazySubscribeMatchQuery,
+  useSubscribeMatchQuery,
 } = extendedApiSlice;
 
-// export const getGameId = (state) => state.gameId;
+
+
+

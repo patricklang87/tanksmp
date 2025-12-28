@@ -1,16 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLazyInitializeMatchQuery, useJoinMatchMutation, useLazySubscribeMatchQuery, useStartMatchMutation, } from "../api/matchSlice";
+import { useAppDispatch } from "../../redux/hooks";
+import { setMatchId } from "../../redux/gameInfoRedux";
+import { useLocation, useNavigate } from "react-router-dom";
 export const useStartScreenProps = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
     const [playerName, setPlayerName] = useState("");
     const [requestedColor, setRequestedColor] = useState(null);
     const [gameId, setGameId] = useState("");
     const [isGameCreator, setIsGameCreator] = useState(false);
     const [selectedPage, setSelectedPage] = useState(1);
     const [joinedMatch, setJoinedMatch] = useState(false);
+    const dispatch = useAppDispatch();
     const [initializeMatch, { isLoading, isSuccess, isError, error }] = useLazyInitializeMatchQuery();
     const [subscribeMatch, { data }] = useLazySubscribeMatchQuery();
     const [joinMatch] = useJoinMatchMutation();
     const [startMatch] = useStartMatchMutation();
+    const gameStatus = data?.gameStatus;
+    useEffect(() => {
+        console.log("gameStatus", gameStatus);
+        if (gameStatus === "IN_PROGRESS" && location.pathname !== "/match") {
+            navigate("/match");
+        }
+    }, [gameStatus, location.pathname, navigate]);
     const handleInitializeMatchClick = async (e) => {
         e.preventDefault();
         try {
@@ -31,6 +44,7 @@ export const useStartScreenProps = () => {
         try {
             const res = await subscribeMatch(gameId);
             console.log("subscribe", res.data);
+            dispatch(setMatchId(res.data.gameId));
             setSelectedPage(4);
         }
         catch (err) {
@@ -55,7 +69,7 @@ export const useStartScreenProps = () => {
     const handleStartMatchClick = async (e) => {
         e.preventDefault();
         try {
-            const res = await startMatch(gameId).unwrap();
+            const res = await startMatch(data.gameId).unwrap();
             console.log("start", res);
         }
         catch (err) {

@@ -17,6 +17,7 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
                             updateCachedData((draft) => {
                                 draft.claimedColors = recievedMessage.claimedColors;
                                 draft.players = recievedMessage.players;
+                                draft.gameStatus = recievedMessage.gameStatus;
                             });
                         });
                     });
@@ -51,5 +52,4 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
 });
 export const { 
 //   useGetMatchesQuery,
-useStartMatchMutation, useJoinMatchMutation, useLazyInitializeMatchQuery, useLazySubscribeMatchQuery, } = extendedApiSlice;
-// export const getGameId = (state) => state.gameId;
+useStartMatchMutation, useJoinMatchMutation, useLazyInitializeMatchQuery, useLazySubscribeMatchQuery, useSubscribeMatchQuery, } = extendedApiSlice;

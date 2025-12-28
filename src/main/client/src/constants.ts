@@ -24,17 +24,17 @@ export const designConstants: {
 };
 
 export const colorSchemes : {
-  dayColors: ColorScheme;
-  duskColors: ColorScheme;
+  DAY_COLORS: ColorScheme;
+  DUSK_COLORS: ColorScheme;
 } = {
-  dayColors: {
+  DAY_COLORS: {
       lowSkyColor: "beige",
     skyColor: "skyblue",
       landscapeStrokeStyle: "darkgreen",
       landscapeFillStyle: "lightgreen",
       cloudColor: "white",
     },
-  duskColors: {
+  DUSK_COLORS: {
       lowSkyColor: "#f06a41",
     skyColor: "#0f013b",
       landscapeStrokeStyle: "#016308",

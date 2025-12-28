@@ -12,14 +12,14 @@ export const designConstants = {
     devGridSmallLineWidth: 1,
 };
 export const colorSchemes = {
-    dayColors: {
+    DAY_COLORS: {
         lowSkyColor: "beige",
         skyColor: "skyblue",
         landscapeStrokeStyle: "darkgreen",
         landscapeFillStyle: "lightgreen",
         cloudColor: "white",
     },
-    duskColors: {
+    DUSK_COLORS: {
         lowSkyColor: "#f06a41",
         skyColor: "#0f013b",
         landscapeStrokeStyle: "#016308",
