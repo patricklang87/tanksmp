@@ -1,4 +1,4 @@
-import { connectToSocket } from "./socket_js";
+import { connectToSocket } from "./stompConnection";
 import apiSlice from "./apiSlice";
 
 // json-server --watch data/db.json --port 8080
@@ -6,7 +6,6 @@ import apiSlice from "./apiSlice";
 // https://wanago.io/2022/01/03/websockets-redux-toolkit-query-typescript/
 
 // https://redux-toolkit.js.org/rtk-query/usage/mutations
-// const ws = new WebSocket("ws://localhost:8080/topic/match");
 // https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/WebSocket
 // https://stackoverflow.com/questions/75593402/react-rtk-query-with-socket-io-connection-behaves-strangely-during-data-update
 // figure out how to subscribe to a particular game?
@@ -20,10 +19,10 @@ export interface InitializationDto {
 export const extendedApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     initializeMatch: builder.query({
-      query: () => ({ url: "/api/matches", method: "POST" }),
+      query: () => ({ url: "/matches", method: "POST" }),
     }),
     subscribeMatch: builder.query({
-      query: (gameId) => `/api/matches/${gameId}`,
+      query: (gameId) => `/matches/${gameId}`,
       async onCacheEntryAdded(
         gameId,
         { cacheDataLoaded, cacheEntryRemoved, updateCachedData }
@@ -69,14 +68,14 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
         gameId: string;
         requestedColor: number | null;
       }) => ({
-        url: `/api/matches/${gameId}/players`,
+        url: `/matches/${gameId}/players`,
         method: "POST",
         body: { playerName, requestedColor },
       }),
     }),
     startMatch: builder.mutation({
       query: (gameId) => ({
-        url: `/api/matches/${gameId}/start`,
+        url: `/matches/${gameId}/start`,
         method: "POST",
       }),
     }),

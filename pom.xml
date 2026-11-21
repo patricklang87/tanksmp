@@ -158,7 +158,7 @@
 							<resources>
 								<resource>
 									<directory>src/main/client/dist</directory>
-									<filtering>true</filtering>
+									<filtering>false</filtering>
 								</resource>
 							</resources>
 						</configuration>
