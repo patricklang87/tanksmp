@@ -54,8 +54,9 @@ public class GameService {
                 .orElseThrow(() -> new GameNotFoundException("A game with that ID does not exist."));
     }
 
-    public Game joinGame(String playerName, Integer requestedColor, String gameId) {
+    public Game joinGame(String rawPlayerName, Integer requestedColor, String gameId) {
         Game requestedGame = getGame(gameId);
+        String playerName = rawPlayerName == null ? null : rawPlayerName.trim();
         validatePlayerName(playerName);
         validateRequestedColor(requestedColor);
 

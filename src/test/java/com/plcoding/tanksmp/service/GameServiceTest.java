@@ -152,4 +152,22 @@ class GameServiceTest {
                 .isInstanceOf(InvalidRequestException.class)
                 .hasMessageContaining("at most");
     }
+
+    @Test
+    void joinGameAcceptsTwentyLetterNameWithSurroundingSpacesAndStoresItTrimmed() throws Exception {
+        String twentyLetterName = "x".repeat(GameConstants.MAX_PLAYER_NAME_LENGTH);
+
+        Game joined = gameService.joinGame("  " + twentyLetterName + "  ", 0, game.getGameId());
+
+        assertThat(joined.getPlayers().get(0).getName()).isEqualTo(twentyLetterName);
+        assertThat(joined.getClaimedColors()[0]).isEqualTo(twentyLetterName);
+    }
+
+    @Test
+    void joinGameRejectsWhitespaceOnlyName() {
+        assertThatThrownBy(() -> gameService.joinGame("   ", 0, game.getGameId()))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessageContaining("required");
+        assertThat(game.getPlayers()).isEmpty();
+    }
 }

@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -27,6 +28,12 @@ public class ApiExceptionHandler {
     @ExceptionHandler(InvalidGameStateException.class)
     public ResponseEntity<Map<String, String>> handleInvalidGameState(InvalidGameStateException exception) {
         return buildResponse(HttpStatus.CONFLICT, exception);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, String>> handleUnreadableBody(HttpMessageNotReadableException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", "The request body is missing or malformed."));
     }
 
     private ResponseEntity<Map<String, String>> buildResponse(HttpStatus status, RuntimeException exception) {

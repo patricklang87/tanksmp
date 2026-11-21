@@ -140,4 +140,15 @@ class GameControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").exists());
     }
+
+    @Test
+    void joiningWithMalformedJsonReturns400WithFixedMessage() throws Exception {
+        String gameId = createGame();
+
+        mockMvc.perform(post("/api/matches/" + gameId + "/players")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{not valid json"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("The request body is missing or malformed."));
+    }
 }
