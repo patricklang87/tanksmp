@@ -61,3 +61,10 @@ dist-ssr
 *.sln
 *.sw?
 
+
+### Build artifacts ###
+*.tsbuildinfo
+**/.DS_Store
+src/main/client/node/
+# JS emitted by tsc next to TypeScript sources
+src/main/client/src/**/*.js
