@@ -13,7 +13,7 @@ public class TankAction {
     private String displayName;
     private  int damage;
     private ActionType type;
-    private int rounds;
+    private Integer rounds;
     private int[] explosionColor;
     private Boolean limitedUse;
 }

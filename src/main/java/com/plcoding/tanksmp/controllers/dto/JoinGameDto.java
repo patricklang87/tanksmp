@@ -6,5 +6,4 @@ import lombok.Data;
 public class JoinGameDto {
     private String playerName;
     private Integer requestedColor;
-    private String gameId;
 }
