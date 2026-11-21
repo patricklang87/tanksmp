@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 import java.util.ArrayList;
 
 import com.plcoding.tanksmp.customTypes.Point2D;
+import com.plcoding.tanksmp.model.constants.GameConstants;
 import com.plcoding.tanksmp.model.keywords.LandscapeType;
 
 @NoArgsConstructor
@@ -15,7 +16,9 @@ public class Topography {
   private Float minHeightCoefficient = 0.2f;
   private Float maxHeightCoefficient = 0.8f;
 
-  public ArrayList<Point2D> createInitialTopography(Integer canvasWidth, Integer canvasHeight) {
+  public ArrayList<Point2D> createInitialTopography() {
+        Integer canvasWidth = GameConstants.CANVAS_WIDTH;
+        Integer canvasHeight = GameConstants.CANVAS_HEIGHT;
         ArrayList<Point2D> points = new ArrayList<Point2D>();
 
         Float maxHeight = canvasHeight * maxHeightCoefficient;
@@ -37,14 +40,10 @@ public class Topography {
                     canvasHeight *
                     maxVariationCoefficient *
                           (float) Math.random();
-                  System.out.println("variation: " + variation.toString());
                   
                   Float currentY = previousY + variation;
-                  System.out.println("previousY: " + previousY.toString());
-                  System.out.println("currentY: " + currentY.toString());
                   if (currentY > maxHeight) currentY = maxHeight;
                   if (currentY < 0) currentY = 0f;
-                  // Point2D nextPoint = new Point2D(currentX, canvasHeight - currentY);
                   Point2D nextPoint = new Point2D(currentX, currentY);
                   
                   points.add(nextPoint);

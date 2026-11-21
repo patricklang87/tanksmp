@@ -1,30 +1,26 @@
 package com.plcoding.tanksmp.storage;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.springframework.stereotype.Component;
 
 import com.plcoding.tanksmp.model.Game;
 
+/** In-memory store of matches, safe for concurrent access. */
+@Component
 public class GameStorage {
-    private static Map<String, Game> games;
-    private static GameStorage instance;
+    private final Map<String, Game> gamesById = new ConcurrentHashMap<>();
 
-    private GameStorage() {
-        games = new HashMap<String, Game>();
-    }
-
-    public static synchronized GameStorage getInstance() {
-        if (instance == null) {
-            instance = new GameStorage();
+    public Optional<Game> findById(String gameId) {
+        if (gameId == null) {
+            return Optional.empty();
         }
-        return instance;
+        return Optional.ofNullable(gamesById.get(gameId));
     }
 
-    public Map<String, Game> getGames() {
-        return games;
-    }
-
-    public void setGame(Game game) {
-        games.put(game.getGameId(), game);
+    public void save(Game game) {
+        gamesById.put(game.getGameId(), game);
     }
 }

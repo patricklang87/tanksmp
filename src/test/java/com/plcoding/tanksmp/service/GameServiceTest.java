@@ -5,24 +5,30 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import com.plcoding.tanksmp.exceptions.InvaildGameException;
-import com.plcoding.tanksmp.exceptions.InvaildParamException;
+import com.plcoding.tanksmp.exceptions.GameNotFoundException;
+import com.plcoding.tanksmp.exceptions.InvalidGameStateException;
+import com.plcoding.tanksmp.exceptions.InvalidRequestException;
 import com.plcoding.tanksmp.model.Game;
 import com.plcoding.tanksmp.model.GameStatus;
 import com.plcoding.tanksmp.model.Player;
+import com.plcoding.tanksmp.model.constants.GameConstants;
 import com.plcoding.tanksmp.model.keywords.ColorSchemas;
 import com.plcoding.tanksmp.model.keywords.TankActionName;
 import com.plcoding.tanksmp.storage.GameStorage;
 
 class GameServiceTest {
 
+    private GameStorage gameStorage;
     private GameService gameService;
     private Game game;
 
     @BeforeEach
     void setUp() {
-        gameService = new GameService();
+        gameStorage = new GameStorage();
+        gameService = new GameService(gameStorage);
         game = gameService.initializeGame();
     }
 
@@ -35,7 +41,7 @@ class GameServiceTest {
         assertThat(game.getTopography()).isNotEmpty();
         assertThat(game.getColorSchema()).isIn(
                 ColorSchemas.DAY_COLORS.toString(), ColorSchemas.DUSK_COLORS.toString());
-        assertThat(GameStorage.getInstance().getGames()).containsEntry(game.getGameId(), game);
+        assertThat(gameStorage.findById(game.getGameId())).contains(game);
     }
 
     @Test
@@ -58,7 +64,7 @@ class GameServiceTest {
     @Test
     void joinGameRejectsUnknownGame() {
         assertThatThrownBy(() -> gameService.joinGame("alice", 0, "no-such-game"))
-                .isInstanceOf(InvaildParamException.class);
+                .isInstanceOf(GameNotFoundException.class);
     }
 
     @Test
@@ -66,7 +72,7 @@ class GameServiceTest {
         gameService.joinGame("alice", 0, game.getGameId());
 
         assertThatThrownBy(() -> gameService.joinGame("alice", 1, game.getGameId()))
-                .isInstanceOf(InvaildParamException.class)
+                .isInstanceOf(InvalidRequestException.class)
                 .hasMessageContaining("already taken");
     }
 
@@ -77,7 +83,7 @@ class GameServiceTest {
         }
 
         assertThatThrownBy(() -> gameService.joinGame("late", 0, game.getGameId()))
-                .isInstanceOf(InvaildGameException.class);
+                .isInstanceOf(InvalidGameStateException.class);
     }
 
     @Test
@@ -86,7 +92,7 @@ class GameServiceTest {
         gameService.startGame(game.getGameId());
 
         assertThatThrownBy(() -> gameService.joinGame("bob", 1, game.getGameId()))
-                .isInstanceOf(InvaildGameException.class);
+                .isInstanceOf(InvalidGameStateException.class);
     }
 
     @Test
@@ -95,12 +101,55 @@ class GameServiceTest {
         assertThat(started.getGameStatus()).isEqualTo(GameStatus.IN_PROGRESS);
 
         assertThatThrownBy(() -> gameService.startGame(game.getGameId()))
-                .isInstanceOf(InvaildGameException.class);
+                .isInstanceOf(InvalidGameStateException.class);
     }
 
     @Test
     void startGameRejectsUnknownGame() {
         assertThatThrownBy(() -> gameService.startGame("no-such-game"))
-                .isInstanceOf(InvaildParamException.class);
+                .isInstanceOf(GameNotFoundException.class);
+    }
+
+    @Test
+    void getGameRejectsUnknownGame() {
+        assertThatThrownBy(() -> gameService.getGame("no-such-game"))
+                .isInstanceOf(GameNotFoundException.class);
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = { -1, 6, 100 })
+    void joinGameRejectsColorOutOfRange(int requestedColor) {
+        assertThatThrownBy(() -> gameService.joinGame("alice", requestedColor, game.getGameId()))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessageContaining("between 0 and 5");
+        assertThat(game.getPlayers()).isEmpty();
+    }
+
+    @Test
+    void joinGameRejectsMissingColor() {
+        assertThatThrownBy(() -> gameService.joinGame("alice", null, game.getGameId()))
+                .isInstanceOf(InvalidRequestException.class);
+    }
+
+    @Test
+    void joinGameRejectsColorAlreadyClaimed() throws Exception {
+        gameService.joinGame("alice", 2, game.getGameId());
+
+        assertThatThrownBy(() -> gameService.joinGame("bob", 2, game.getGameId()))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessageContaining("already been claimed");
+        assertThat(game.getPlayers()).hasSize(1);
+    }
+
+    @Test
+    void joinGameRejectsBlankOrTooLongNames() {
+        assertThatThrownBy(() -> gameService.joinGame("  ", 0, game.getGameId()))
+                .isInstanceOf(InvalidRequestException.class);
+        assertThatThrownBy(() -> gameService.joinGame(null, 0, game.getGameId()))
+                .isInstanceOf(InvalidRequestException.class);
+        String tooLongName = "x".repeat(GameConstants.MAX_PLAYER_NAME_LENGTH + 1);
+        assertThatThrownBy(() -> gameService.joinGame(tooLongName, 0, game.getGameId()))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessageContaining("at most");
     }
 }

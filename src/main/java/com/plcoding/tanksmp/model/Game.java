@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import com.plcoding.tanksmp.customTypes.Point2D;
+import com.plcoding.tanksmp.model.constants.GameConstants;
 
 import lombok.Data;
 
@@ -16,8 +17,8 @@ public class Game {
     private ArrayList<Point2D> topography;
     private String colorSchema;
     private int currentPlayerIndex;
-    private int maxPlayerCount = 6;
-    private String[] claimedColors = new String[6];
+    private int maxPlayerCount = GameConstants.MAX_PLAYERS;
+    private String[] claimedColors = new String[GameConstants.MAX_PLAYERS];
 
     public Game() {
         Arrays.fill(this.claimedColors, "");

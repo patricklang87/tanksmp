@@ -20,10 +20,10 @@ export interface InitializationDto {
 export const extendedApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     initializeMatch: builder.query({
-      query: () => "/match/initialize",
+      query: () => ({ url: "/api/matches", method: "POST" }),
     }),
     subscribeMatch: builder.query({
-      query: (gameId) => `/match/initialize/${gameId}`,
+      query: (gameId) => `/api/matches/${gameId}`,
       async onCacheEntryAdded(
         gameId,
         { cacheDataLoaded, cacheEntryRemoved, updateCachedData }
@@ -69,16 +69,15 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
         gameId: string;
         requestedColor: number | null;
       }) => ({
-        url: "/match/join",
+        url: `/api/matches/${gameId}/players`,
         method: "POST",
-        body: { playerName, gameId, requestedColor },
+        body: { playerName, requestedColor },
       }),
     }),
     startMatch: builder.mutation({
       query: (gameId) => ({
-        url: "/match/start",
+        url: `/api/matches/${gameId}/start`,
         method: "POST",
-        body: { gameId },
       }),
     }),
   }),
