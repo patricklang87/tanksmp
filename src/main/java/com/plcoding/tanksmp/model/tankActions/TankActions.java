@@ -1,5 +1,7 @@
 package com.plcoding.tanksmp.model.tankActions;
 
+import java.util.List;
+
 import com.plcoding.tanksmp.model.keywords.ActionType;
 import com.plcoding.tanksmp.model.keywords.TankActionName;
 
@@ -13,8 +15,19 @@ public class TankActions {
     TankAction standardShot = new TankAction(TankActionName.STANDARD_SHOT, "Standard Shot", 20,
             ActionType.PROJECTILE, null, new int[] { 250, 183, 0 }, false);
     TankAction steelShotput = new TankAction(TankActionName.STEEL_SHOTPUT, "Steel Shotput", 35,
-            ActionType.PROJECTILE, 3, new int[] { 250, 183, 0 }, true);
+            ActionType.PROJECTILE, 3, new int[] { 241, 90, 34 }, true);
     TankAction begemot = new TankAction(TankActionName.BEGEMOT, "Begemot", 70,
             ActionType.PROJECTILE, 1, new int[] { 241, 90, 34 }, true);
     TankAction drive = new TankAction(TankActionName.DRIVE, "Drive", 0, ActionType.DRIVE, null, null, false);
+
+    public List<TankAction> all() {
+        return List.of(standardShot, steelShotput, begemot, drive);
+    }
+
+    public TankAction findByName(TankActionName name) {
+        return all().stream()
+                .filter(action -> action.getName() == name)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Unknown tank action: " + name));
+    }
 }
