@@ -297,4 +297,43 @@ class GameControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("The request body is missing or malformed."));
     }
+
+    @Test
+    void theHostCanRematchAFinishedMatchAndOthersAndUnfinishedMatchesAreRejected() throws Exception {
+        String gameId = createGame();
+        String aliceToken = joinGame(gameId, "alice", 0);
+        String bobToken = joinGame(gameId, "bob", 1);
+        startMatch(gameId, aliceToken);
+
+        mockMvc.perform(post("/api/matches/" + gameId + "/rematch").header(TOKEN_HEADER, aliceToken))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").isString());
+
+        FlatGroundDuel.arrange(gameStorage.findById(gameId).orElseThrow());
+        FlatGroundDuel.Shot winningShot = FlatGroundDuel.findWinningShot();
+        mockMvc.perform(post("/api/matches/" + gameId + "/turns")
+                .header(TOKEN_HEADER, aliceToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(turnBody(winningShot.turretAngle(), winningShot.shotPower())))
+                .andExpect(jsonPath("$.gameStatus").value("FINISHED"));
+
+        mockMvc.perform(post("/api/matches/" + gameId + "/rematch").header(TOKEN_HEADER, bobToken))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/matches/" + gameId + "/rematch"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/matches/unknown/rematch").header(TOKEN_HEADER, aliceToken))
+                .andExpect(status().isNotFound());
+
+        String body = mockMvc.perform(post("/api/matches/" + gameId + "/rematch").header(TOKEN_HEADER, aliceToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.gameStatus").value("IN_PROGRESS"))
+                .andExpect(jsonPath("$.turnNumber").value(0))
+                .andExpect(jsonPath("$.winnerIndex").doesNotExist())
+                .andExpect(jsonPath("$.currentPlayerIndex").value(1))
+                .andExpect(jsonPath("$.players[0].wins").value(1))
+                .andExpect(jsonPath("$.players[1].wins").value(0))
+                .andExpect(jsonPath("$.players[1].tank.shields").value(100))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(body).doesNotContain(aliceToken).doesNotContain(bobToken).doesNotContain("playerToken");
+    }
 }

@@ -28,4 +28,23 @@ describe("ShieldsPanel", () => {
     expect(graceRow).toHaveStyle({ backgroundColor: "rgba(153, 117, 112)" });
     expect(screen.getByTestId("shields-row-0")).not.toHaveTextContent("Deadzo");
   });
+
+  it("shows each player's win count", () => {
+    const players = [buildPlayer(0, "Ada", 0), buildPlayer(1, "Grace", 3)];
+    players[0].wins = 1;
+    players[1].wins = 3;
+    render(<ShieldsPanel players={players} />);
+
+    expect(within(screen.getByTestId("shields-row-0")).getByText("1 win")).toBeInTheDocument();
+    expect(within(screen.getByTestId("shields-row-1")).getByText("3 wins")).toBeInTheDocument();
+  });
+
+  it("shows no wins for a player whose count is missing or zero", () => {
+    const players = [buildPlayer(0, "Ada", 0), buildPlayer(1, "Grace", 3)];
+    players[1].wins = null;
+    render(<ShieldsPanel players={players} />);
+
+    expect(within(screen.getByTestId("shields-row-0")).getByText("0 wins")).toBeInTheDocument();
+    expect(within(screen.getByTestId("shields-row-1")).getByText("0 wins")).toBeInTheDocument();
+  });
 });

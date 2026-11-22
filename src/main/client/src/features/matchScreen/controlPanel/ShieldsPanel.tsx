@@ -4,7 +4,9 @@ import { arrayToRgba } from "../../../util/color";
 
 type ShieldsPanelProps = { players: Player[] };
 
-/** One row per player: color, name and remaining shields. */
+const formatWins = (wins: number): string => `${wins} ${wins === 1 ? "win" : "wins"}`;
+
+/** One row per player: color, name, win count and remaining shields. */
 const ShieldsPanel = ({ players }: ShieldsPanelProps) => (
   <ul className="shields-panel" aria-label="Shields">
     {players.map((player) => {
@@ -21,6 +23,7 @@ const ShieldsPanel = ({ players }: ShieldsPanelProps) => (
           style={{ backgroundColor: rowColor }}
         >
           <span className="shields-player-name">{player.name}</span>
+          <span className="shields-wins">{formatWins(player.wins ?? 0)}</span>
           <span className="shields-value">{isDestroyed ? "Deadzo" : `${shields}%`}</span>
           <progress
             max={100}

@@ -16,6 +16,7 @@ import Tanks from "./tanks/Tanks";
 import Projectile from "./projectile/Projectile";
 import Explosion from "./explosion/Explosion";
 import WinnerPopup from "./WinnerPopup";
+import { useRematch } from "./useRematch";
 import type { LocalAim } from "./tanks/tankAnimation";
 
 /**
@@ -28,6 +29,7 @@ const BattleDisplay = ({ game, localAim }: { game: Game; localAim?: LocalAim }) 
   const activeTurn = useAppSelector(selectActiveTurn);
   const replayId = useAppSelector(selectReplayId);
   const { gameId } = game;
+  const { isHost, isRematching, errorMessage, startRematch } = useRematch(game);
 
   const handlePhaseComplete = useCallback(
     () => dispatch(completeReplayPhase(gameId)),
@@ -48,7 +50,14 @@ const BattleDisplay = ({ game, localAim }: { game: Game; localAim?: LocalAim }) 
         className="canvas-container"
         style={{ height: canvasConstants.height, width: canvasConstants.width }}
       >
-        <WinnerPopup players={game.players} winnerIndex={game.winnerIndex} />
+        <WinnerPopup
+          players={game.players}
+          winnerIndex={game.winnerIndex}
+          isHost={isHost}
+          onRematch={startRematch}
+          isRematching={isRematching}
+          errorMessage={errorMessage}
+        />
         <StaticBackground colorScheme={colorScheme} />
         <Clouds clouds={game.clouds} colorScheme={colorScheme} />
         <Topography topography={displayedTopography} colorScheme={colorScheme} />

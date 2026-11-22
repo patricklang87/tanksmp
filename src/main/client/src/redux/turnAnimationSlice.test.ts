@@ -5,6 +5,7 @@ import reducer, {
   nextPhaseOf,
   phaseCompleted,
   replayDiscarded,
+  turnAnimationReset,
   turnEnqueued,
   type TurnAnimationState,
 } from "./turnAnimationSlice";
@@ -144,6 +145,25 @@ describe("turnAnimationSlice", () => {
     expect(state.activeTurn).toBeNull();
     expect(state.queue).toHaveLength(0);
     expect(state.gameToApply).toBe(secondGame);
+  });
+});
+
+describe("turnAnimationReset", () => {
+  it("drops the active replay, the queue and any pending game", () => {
+    const store = setupStore();
+    store.dispatch(turnEnqueued({ turnResult: buildTurnResult(), resultingGame: gameAfterTurn }));
+    store.dispatch(gameUpdateReceived(gameAfterTurn));
+    const replayIdBefore = store.getState().turnAnimation.replayId;
+
+    store.dispatch(turnAnimationReset());
+
+    const state = store.getState().turnAnimation;
+    expect(state.phase).toBe("IDLE");
+    expect(state.activeTurn).toBeNull();
+    expect(state.activeResultingGame).toBeNull();
+    expect(state.queue).toEqual([]);
+    expect(state.gameToApply).toBeNull();
+    expect(state.replayId).toBe(replayIdBefore + 1);
   });
 });
 

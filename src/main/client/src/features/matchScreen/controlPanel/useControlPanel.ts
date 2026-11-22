@@ -16,6 +16,8 @@ export const MAX_DRIVE_DISTANCE = 150;
 export const AIM_UPDATE_INTERVAL_MILLISECONDS = 100;
 
 const DEFAULT_ACTION_NAME: TankActionName = "STANDARD_SHOT";
+const DEFAULT_TURRET_ANGLE = -90;
+const DEFAULT_SHOT_POWER = 50;
 
 export const getActions = (tank: Tank): TankAction[] => [
   tank.tankActions.standardShot,
@@ -48,13 +50,27 @@ export const useControlPanel = (game: Game) => {
   const ownTank = playerIndex === null ? undefined : game.players[playerIndex]?.tank;
 
   const [chosenActionName, setChosenActionName] = useState<TankActionName>(DEFAULT_ACTION_NAME);
-  const [turretAngle, setTurretAngle] = useState<number>(ownTank?.turretAngle ?? -90);
-  const [shotPower, setShotPower] = useState<number>(ownTank?.shotPower ?? 50);
+  const [turretAngle, setTurretAngle] = useState<number>(ownTank?.turretAngle ?? DEFAULT_TURRET_ANGLE);
+  const [shotPower, setShotPower] = useState<number>(ownTank?.shotPower ?? DEFAULT_SHOT_POWER);
   const [driveDistance, setDriveDistance] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // The turn the server accepted from this player; controls stay locked until the replay has
   // finished and the game has moved on to the next turn.
   const [submittedTurnNumber, setSubmittedTurnNumber] = useState<number | null>(null);
+
+  // Whenever the match is not running (finished, or about to be restarted by a rematch that begins
+  // again at turn 0) forget the turn lock and the previous match's aim, so the next match starts
+  // unlocked with a fresh aim.
+  const gameStatus = game.gameStatus;
+  useEffect(() => {
+    if (gameStatus === "IN_PROGRESS") return;
+    setSubmittedTurnNumber(null);
+    setChosenActionName(DEFAULT_ACTION_NAME);
+    setTurretAngle(DEFAULT_TURRET_ANGLE);
+    setShotPower(DEFAULT_SHOT_POWER);
+    setDriveDistance(0);
+    setErrorMessage(null);
+  }, [gameStatus]);
 
   // A weapon that has just run out of rounds falls back to the standard shot.
   const selectedActionName =

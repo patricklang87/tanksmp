@@ -1,5 +1,6 @@
 import { applyAimToGame, subscribeToMatchEvents } from "./matchEventSubscription";
 import type { RootState } from "../../redux/store";
+import { turnAnimationReset } from "../../redux/turnAnimationSlice";
 import apiSlice from "./apiSlice";
 import type {
   Game,
@@ -75,6 +76,23 @@ export const matchApi = apiSlice.injectEndpoints({
         }
       },
     }),
+    rematchMatch: builder.mutation<Game, PlayerAuthorizedRequest>({
+      query: ({ matchId, playerToken }) => ({
+        url: `/matches/${matchId}/rematch`,
+        method: "POST",
+        headers: { [PLAYER_TOKEN_HEADER]: playerToken },
+      }),
+      async onQueryStarted({ matchId }, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          // The new match starts from scratch: drop any leftover replay before showing it.
+          dispatch(turnAnimationReset());
+          dispatch(matchApi.util.updateQueryData("getMatch", matchId, () => data));
+        } catch {
+          // The mutation result carries the error for the caller.
+        }
+      },
+    }),
     submitTurn: builder.mutation<
       Game,
       PlayerAuthorizedRequest & { command: TurnCommand }
@@ -95,5 +113,6 @@ export const {
   useLazyGetMatchQuery,
   useJoinMatchMutation,
   useStartMatchMutation,
+  useRematchMatchMutation,
   useSubmitTurnMutation,
 } = matchApi;
