@@ -1,82 +1,63 @@
-import React from "react";
-import { SetStateAction, Dispatch } from "react";
+import type { FormEvent } from "react";
 import SelectTankColor from "./SelectTankColor";
 import GameIdDisplay from "./GameIdDisplay";
-import IsFalsy from "../../components/common/logic/IsFalsy";
-import IsTruthy from "../../components/common/logic/IsTruthy";
+import { lobbyConstants } from "../../constants";
 
 const JoinMatch = ({
-  handleJoinMatchClick,
-  handleStartMatchClick,
-  setPlayerName,
+  matchId,
+  claimedColors,
   playerName,
+  onPlayerNameChange,
   requestedColor,
-  gameId,
-  data,
-  setRequestedColor,
-  joinedMatch,
-  isGameCreator,
+  onRequestedColorChange,
+  onSubmit,
+  onBack,
+  isJoining,
 }: {
-  handleJoinMatchClick: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
-  handleStartMatchClick: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
-  setPlayerName: Dispatch<SetStateAction<string>>;
-  setGameId: Dispatch<SetStateAction<string>>;
-  setRequestedColor: Dispatch<SetStateAction<number | null>>;
-  joinedMatch: boolean;
+  matchId: string;
+  claimedColors?: readonly (string | undefined)[];
   playerName: string;
+  onPlayerNameChange: (playerName: string) => void;
   requestedColor: number | null;
-  gameId: string;
-  data: any;
-  isGameCreator: boolean;
+  onRequestedColorChange: (colorIndex: number) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>;
+  onBack: () => void;
+  isJoining: boolean;
 }) => {
-  let disableJoinButton = false;
-  if (
-    playerName.length < 3 ||
-    !(typeof requestedColor === "number") ||
-    !gameId.length
-  ) {
-    disableJoinButton = true;
-  }
+  const hasValidName = playerName.trim().length >= lobbyConstants.minPlayerNameLength;
+  const hasSelectedColor = requestedColor !== null;
+  const isJoinDisabled = !hasValidName || !hasSelectedColor || isJoining;
 
   return (
     <>
-      <GameIdDisplay gameId={data?.gameId} />
+      <GameIdDisplay gameId={matchId} />
       <SelectTankColor
-        data={data}
-        setRequestedColor={setRequestedColor}
+        claimedColors={claimedColors}
+        setRequestedColor={onRequestedColorChange}
         requestedColor={requestedColor}
       />
 
-      <IsFalsy value={joinedMatch}>
-        <form onSubmit={handleJoinMatchClick}>
-          <label className="form-label" htmlFor="playerName">
-            <strong>Enter Player Name</strong>
-            <br />
-          </label>
-
-          <input
-            type="text"
-            id="playerName"
-            className="form-control"
-            maxLength={8}
-            onChange={(e) => setPlayerName(e.target.value)}
-          />
+      <form onSubmit={onSubmit}>
+        <label className="form-label" htmlFor="playerName">
+          <strong>Enter Player Name</strong>
           <br />
-          <button type="submit" disabled={disableJoinButton}>
-            Join
-          </button>
-        </form>
-      </IsFalsy>
-      <IsTruthy value={joinedMatch}>
-        <IsFalsy value={isGameCreator}>
-          <p>Awaiting match start...</p>
-        </IsFalsy>
-        <IsTruthy value={isGameCreator}>
-          <form onSubmit={handleStartMatchClick}>
-            <button type="submit">Start Game</button>
-          </form>
-        </IsTruthy>
-      </IsTruthy>
+        </label>
+        <input
+          type="text"
+          id="playerName"
+          className="form-control"
+          maxLength={lobbyConstants.maxPlayerNameLength}
+          value={playerName}
+          onChange={(event) => onPlayerNameChange(event.target.value)}
+        />
+        <br />
+        <button type="button" onClick={onBack}>
+          Back
+        </button>
+        <button type="submit" disabled={isJoinDisabled}>
+          {isJoining ? "Joining..." : "Join"}
+        </button>
+      </form>
     </>
   );
 };

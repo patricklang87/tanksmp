@@ -1,77 +1,63 @@
-import { useEffect } from "react";
-import { useStartScreenProps } from "./startScreenProps";
-import IsTruthy from "../../components/common/logic/IsTruthy";
+import { useLobby } from "./useLobby";
+import CreateOrJoin from "./CreateOrJoin";
+import EnterMatchId from "./EnterMatchId";
 import JoinMatch from "./JoinMatch";
-import SubscribeMatch from "./SubscribeMatch";
+import WaitingRoom from "./WaitingRoom";
+import ErrorMessage from "./ErrorMessage";
+import WakingServerNotice from "./WakingServerNotice";
 import "./startScreen.css";
-import StartOrJoin from "./CreateOrJoin";
 
 const StartScreen = () => {
-  const {
-    handleInitializeMatchClick,
-    handleJoinMatchClick,
-    handleSubscribeMatchClick,
-    handleStartMatchClick,
-    data,
-    isLoading,
-    isSuccess,
-    isError,
-    error,
-    setPlayerName,
-    setRequestedColor,
-    requestedColor,
-    setGameId,
-    playerName,
-    gameId,
-    isGameCreator,
-    selectedPage,
-    setSelectedPage,
-    joinedMatch,
-  } = useStartScreenProps();
-
-  useEffect(() => {
-    console.log("start data", data);
-  }, [data]);
+  const lobby = useLobby();
 
   return (
     <>
       <h1 className="title-card">Tanks fer Nuffin'!</h1>
 
-      <IsTruthy value={selectedPage === 1}>
-        <StartOrJoin
-          setSelectedPage={setSelectedPage}
-          isError={isError}
-          isSuccess={isSuccess}
-          isLoading={isLoading}
-          error={error}
-          handleInitializeMatchClick={handleInitializeMatchClick}
-        />
-      </IsTruthy>
+      {lobby.isWakingServerNoticeVisible && <WakingServerNotice />}
+      <ErrorMessage message={lobby.errorMessage} />
 
-      <IsTruthy value={selectedPage === 3}>
-        <SubscribeMatch
-          handleSubscribeMatchClick={handleSubscribeMatchClick}
-          setGameId={setGameId}
-          gameId={gameId}
-          isGameCreator={isGameCreator}
+      {lobby.step === "chooseMode" && (
+        <CreateOrJoin
+          onCreateMatch={lobby.handleCreateMatch}
+          onChooseJoinExisting={lobby.handleChooseJoinExisting}
+          isCreating={lobby.isCreatingMatch}
         />
-      </IsTruthy>
+      )}
 
-      <IsTruthy value={selectedPage === 4}>
+      {lobby.step === "enterMatchId" && (
+        <EnterMatchId
+          matchIdInput={lobby.matchIdInput}
+          onMatchIdInputChange={lobby.setMatchIdInput}
+          onSubmit={lobby.handleLookUpMatch}
+          onBack={lobby.handleBackToStart}
+          isLookingUp={lobby.isLookingUpMatch}
+        />
+      )}
+
+      {lobby.step === "joinMatch" && lobby.matchId && (
         <JoinMatch
-          setGameId={setGameId}
-          setPlayerName={setPlayerName}
-          handleJoinMatchClick={handleJoinMatchClick}
-          handleStartMatchClick={handleStartMatchClick}
-          playerName={playerName}
-          requestedColor={requestedColor}
-          gameId={gameId}
-          data={data}
-          setRequestedColor={setRequestedColor}
-          joinedMatch={joinedMatch}
-          isGameCreator={isGameCreator}
+          matchId={lobby.matchId}
+          claimedColors={lobby.game?.claimedColors}
+          playerName={lobby.playerName}
+          onPlayerNameChange={lobby.setPlayerName}
+          requestedColor={lobby.requestedColor}
+          onRequestedColorChange={lobby.setRequestedColor}
+          onSubmit={lobby.handleJoinMatch}
+          onBack={lobby.handleBackToStart}
+          isJoining={lobby.isJoiningMatch}
         />
-      </IsTruthy>
+      )}
+
+      {lobby.step === "waitingRoom" && lobby.game && (
+        <WaitingRoom
+          game={lobby.game}
+          ownPlayerIndex={lobby.playerIndex}
+          isHost={lobby.isHost}
+          onStartMatch={lobby.handleStartMatch}
+          isStarting={lobby.isStartingMatch}
+        />
+      )}
     </>
   );
 };

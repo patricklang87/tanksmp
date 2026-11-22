@@ -30,3 +30,36 @@
     width: 50px;
     height: 50px;
 }
+
+.lobby-notice {
+  border: 2px solid #0d98ba;
+  border-radius: 10px;
+  padding: 10px;
+  margin: 10px;
+}
+
+.lobby-error {
+  color: #b00020;
+  font-weight: bold;
+  margin: 10px;
+}
+
+.player-list {
+  list-style: none;
+  padding: 0;
+}
+
+.player-list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+}
+
+.player-color-swatch {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid black;
+}

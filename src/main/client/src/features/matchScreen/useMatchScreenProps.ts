@@ -1,24 +1,25 @@
 import { useEffect } from "react";
-import { useSubscribeMatchQuery } from "../api/matchSlice";
+import { useGetMatchQuery } from "../api/matchSlice";
 import { useNavigate } from "react-router-dom";
+import { skipToken } from "@reduxjs/toolkit/query";
 import { useAppSelector } from "../../redux/hooks";
-import { selectMatchId } from "../../redux/gameInfoRedux";
+import { selectMatchId } from "../../redux/sessionSlice";
 
 const useMatchScreenProps = () => {
   const matchId = useAppSelector(selectMatchId);
-  console.log("matchid", matchId);
-
-  const { data } = useSubscribeMatchQuery(matchId);
-  const { gameStatus } = data;
-
-  console.log("in match screen", data);
   const navigate = useNavigate();
 
+  const { data, isError } = useGetMatchQuery(matchId ?? skipToken);
+  const gameStatus = data?.gameStatus;
+
+  // Send players back to the lobby when there is no match to show. While the match is still
+  // loading after a refresh there is nothing to decide yet.
   useEffect(() => {
-    if (!data || !matchId || gameStatus !== "IN_PROGRESS") {
+    const matchIsNotRunning = gameStatus === "NEW";
+    if (!matchId || isError || matchIsNotRunning) {
       navigate("/");
     }
-  }, [data]);
+  }, [matchId, isError, gameStatus, navigate]);
 
   return { data };
 };

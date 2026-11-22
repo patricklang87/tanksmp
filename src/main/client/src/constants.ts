@@ -120,3 +120,16 @@ export const actions: {
     explosionColor: [241, 90, 34, 1],
   },
 };
+
+export const lobbyConstants: {
+  minPlayerNameLength: number;
+  maxPlayerNameLength: number;
+  minPlayersToStart: number;
+  /** How long a lobby request may take before the player is told the server is waking up. */
+  slowRequestNoticeDelayMs: number;
+} = {
+  minPlayerNameLength: 3,
+  maxPlayerNameLength: 20,
+  minPlayersToStart: 2,
+  slowRequestNoticeDelayMs: 2000,
+};

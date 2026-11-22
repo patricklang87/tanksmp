@@ -1,18 +1,16 @@
-import React from "react";
-import { SetStateAction, Dispatch } from "react";
 import { tankColor } from "../../constants";
 import { arrayToRgba } from "../../util/color";
 
 const SelectTankColor = ({
-  data,
+  claimedColors = [],
   setRequestedColor,
   requestedColor,
 }: {
-  data?: any;
-  setRequestedColor: Dispatch<SetStateAction<number | null>>;
+  /** Per color index: the name of the player who claimed it, or an empty string. */
+  claimedColors?: readonly (string | undefined)[];
+  setRequestedColor: (colorIndex: number) => void;
   requestedColor: number | null;
 }) => {
-  const claimedColors = data?.claimedColors || [];
 
   const TankSelectionSquare = ({
     color,
