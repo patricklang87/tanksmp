@@ -13,10 +13,10 @@ const EnterMatchId = ({
   onBack: () => void;
   isLookingUp: boolean;
 }) => (
-  <form onSubmit={onSubmit}>
+  <form className="lobby-form" onSubmit={onSubmit}>
     <label className="form-label" htmlFor="matchId">
       <strong>Match ID</strong>
-    </label>{" "}
+    </label>
     <input
       type="text"
       id="matchId"
@@ -24,13 +24,18 @@ const EnterMatchId = ({
       value={matchIdInput}
       onChange={(event) => onMatchIdInputChange(event.target.value)}
     />
-    <br />
-    <button type="button" onClick={onBack}>
-      Back
-    </button>
-    <button type="submit" disabled={!matchIdInput.trim() || isLookingUp}>
-      {isLookingUp ? "Looking up..." : "Find Match"}
-    </button>
+    <div className="lobby-form-buttons">
+      <button type="button" onClick={onBack}>
+        Back
+      </button>
+      <button
+        type="submit"
+        className="button-primary"
+        disabled={!matchIdInput.trim() || isLookingUp}
+      >
+        {isLookingUp ? "Looking up..." : "Find Match"}
+      </button>
+    </div>
   </form>
 );
 

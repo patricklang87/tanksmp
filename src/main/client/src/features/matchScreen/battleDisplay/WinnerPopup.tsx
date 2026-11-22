@@ -31,13 +31,22 @@ export const WinnerPopup = ({
       <div className="winner-popup" role="alertdialog" aria-label="Match result">
         <h1>{headline}</h1>
         {isHost ? (
-          <button type="button" onClick={onRematch} disabled={isRematching}>
+          <button
+            type="button"
+            className="button-primary"
+            onClick={onRematch}
+            disabled={isRematching}
+          >
             Rematch
           </button>
         ) : (
-          <p>Waiting for the host…</p>
+          <p className="winner-popup-waiting">Waiting for the host…</p>
         )}
-        {errorMessage && <p role="alert">{errorMessage}</p>}
+        {errorMessage && (
+          <p className="winner-popup-error" role="alert">
+            {errorMessage}
+          </p>
+        )}
       </div>
     </div>
   );

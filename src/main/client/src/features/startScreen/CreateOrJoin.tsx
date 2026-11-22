@@ -9,7 +9,7 @@ const CreateOrJoin = ({
   onChooseJoinExisting: () => void;
   isCreating: boolean;
 }) => (
-  <div>
+  <div className="lobby-actions">
     <CreateNewMatch onCreateMatch={onCreateMatch} isCreating={isCreating} />
     <button type="button" onClick={onChooseJoinExisting}>
       Join Existing Match

@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from "react";
 import "../../../css/gamescreen.css";
-import { canvasConstants, colorSchemes } from "../../../constants";
+import { colorSchemes } from "../../../constants";
 import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
 import {
   selectActiveTurn,
@@ -33,7 +33,7 @@ const BattleDisplay = ({ game, localAim }: { game: Game; localAim?: LocalAim }) 
 
   const handlePhaseComplete = useCallback(
     () => dispatch(completeReplayPhase(gameId)),
-    [dispatch, gameId]
+    [dispatch, gameId],
   );
 
   // Leaving the screen mid-replay must not lose the server's newest game.
@@ -46,10 +46,7 @@ const BattleDisplay = ({ game, localAim }: { game: Game; localAim?: LocalAim }) 
 
   return (
     <div className="gamescreen">
-      <div
-        className="canvas-container"
-        style={{ height: canvasConstants.height, width: canvasConstants.width }}
-      >
+      <div className="canvas-container">
         <WinnerPopup
           players={game.players}
           winnerIndex={game.winnerIndex}
