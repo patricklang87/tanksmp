@@ -20,6 +20,16 @@ public class TankActions {
             ActionType.PROJECTILE, 1, new int[] { 241, 90, 34 }, true);
     TankAction drive = new TankAction(TankActionName.DRIVE, "Drive", 0, ActionType.DRIVE, null, null, false);
 
+    /** Independent copy of every action. */
+    public TankActions copy() {
+        TankActions copy = new TankActions();
+        copy.standardShot = standardShot.copy();
+        copy.steelShotput = steelShotput.copy();
+        copy.begemot = begemot.copy();
+        copy.drive = drive.copy();
+        return copy;
+    }
+
     public List<TankAction> all() {
         return List.of(standardShot, steelShotput, begemot, drive);
     }
