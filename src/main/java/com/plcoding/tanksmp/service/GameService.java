@@ -1,6 +1,8 @@
 package com.plcoding.tanksmp.service;
 
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -8,6 +10,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
+import com.plcoding.tanksmp.controllers.dto.AimUpdateCommand;
 import com.plcoding.tanksmp.controllers.dto.JoinMatchResponse;
 import com.plcoding.tanksmp.controllers.dto.MatchEvent;
 import com.plcoding.tanksmp.controllers.dto.TurnCommand;
@@ -34,6 +37,7 @@ import com.plcoding.tanksmp.model.tankActions.TankAction;
 import com.plcoding.tanksmp.storage.GameStorage;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Match rules. Every operation that reads or changes a match runs while holding that match's own
@@ -42,8 +46,12 @@ import lombok.RequiredArgsConstructor;
  * it is released, so events reach listeners in the order the state changed.
  */
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class GameService {
+
+    /** A player's live aim updates are accepted at most this often; extras are dropped. */
+    static final Duration MINIMUM_AIM_UPDATE_INTERVAL = Duration.ofMillis(50);
 
     private final GameStorage gameStorage;
     private final Random random;
@@ -183,6 +191,65 @@ public class GameService {
             matchEventPublisher.publish(turnEvent);
             return turnEvent;
         }
+    }
+
+    /**
+     * Records the current player's live aim so other players can watch it. Display only: the turn
+     * itself always uses the values sent with the turn command. Anything invalid, out of turn or
+     * arriving faster than {@link #MINIMUM_AIM_UPDATE_INTERVAL} is dropped without any error.
+     */
+    public void updateAim(String gameId, AimUpdateCommand command) {
+        Game requestedGame = gameStorage.findById(gameId).orElse(null);
+        if (requestedGame == null || command == null) {
+            log.debug("aim update dropped: unknown match or empty command");
+            return;
+        }
+        synchronized (requestedGame) {
+            Player aimingPlayer;
+            try {
+                aimingPlayer = authenticate(requestedGame, command.getPlayerToken());
+            } catch (ForbiddenException invalidToken) {
+                log.debug("aim update dropped for match {}: invalid token", gameId);
+                return;
+            }
+            if (requestedGame.getGameStatus() != GameStatus.IN_PROGRESS
+                    || aimingPlayer.getPlayerIndex() != requestedGame.getCurrentPlayerIndex()) {
+                log.debug("aim update dropped for match {}: not in progress or not the player's turn", gameId);
+                return;
+            }
+            if (!isValidAim(command)) {
+                log.debug("aim update dropped for match {}: values out of range", gameId);
+                return;
+            }
+            Instant now = clock.instant();
+            Instant lastAcceptedAt = requestedGame.getLastAimAcceptedAtByPlayerIndex()
+                    .get(aimingPlayer.getPlayerIndex());
+            if (lastAcceptedAt != null && Duration.between(lastAcceptedAt, now).compareTo(
+                    MINIMUM_AIM_UPDATE_INTERVAL) < 0) {
+                log.debug("aim update dropped for match {}: rate limited", gameId);
+                return;
+            }
+            requestedGame.getLastAimAcceptedAtByPlayerIndex().put(aimingPlayer.getPlayerIndex(), now);
+            recordActivity(requestedGame);
+
+            Tank aimingTank = aimingPlayer.getTank();
+            aimingTank.setTurretAngle(command.getTurretAngle());
+            aimingTank.setShotPower(command.getShotPower());
+            aimingTank.setSelectedAction(command.getSelectedActionName());
+            matchEventPublisher.publish(MatchEvent.aimUpdated(gameId, new MatchEvent.AimUpdate(
+                    aimingPlayer.getPlayerIndex(), command.getTurretAngle(), command.getShotPower(),
+                    command.getSelectedActionName())));
+        }
+    }
+
+    private boolean isValidAim(AimUpdateCommand command) {
+        Integer turretAngle = command.getTurretAngle();
+        Integer shotPower = command.getShotPower();
+        return command.getSelectedActionName() != null
+                && turretAngle != null && turretAngle >= EngineConstants.MIN_TURRET_ANGLE
+                && turretAngle <= EngineConstants.MAX_TURRET_ANGLE
+                && shotPower != null && shotPower >= EngineConstants.MIN_SHOT_POWER
+                && shotPower <= EngineConstants.MAX_SHOT_POWER;
     }
 
     private void recordActivity(Game game) {

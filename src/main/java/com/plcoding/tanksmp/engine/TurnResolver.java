@@ -87,7 +87,8 @@ public final class TurnResolver {
         List<Integer> shieldsAfter = new ArrayList<>();
         tanks.forEach(tank -> shieldsAfter.add(tank.getShields()));
         Integer winnerIndex = TurnOrder.isMatchOver(tanks) ? TurnOrder.findSurvivorIndex(tanks) : null;
-        return new TurnResult(actingPlayerIndex, actionName, projectilePath, drivePath, explosion,
+        return new TurnResult(actingPlayerIndex, actionName, actingTank.getTurretAngle(),
+                actingTank.getShotPower(), projectilePath, drivePath, explosion,
                 struckPlayerIndexes, shieldsAfter, fallTargets, topographyAfter,
                 TurnOrder.nextPlayerIndex(tanks, actingPlayerIndex), winnerIndex);
     }

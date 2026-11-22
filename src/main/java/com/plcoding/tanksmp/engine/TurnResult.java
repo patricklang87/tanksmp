@@ -14,6 +14,8 @@ import com.plcoding.tanksmp.model.keywords.TankActionName;
  *
  * @param actingPlayerIndex who took the turn
  * @param actionName the action actually carried out (after any fallback to Standard Shot)
+ * @param turretAngle the turret angle in degrees the acting tank had when the turn started
+ * @param shotPower the shot power the acting tank had when the turn started
  * @param projectilePath projectile positions per frame; empty for a drive turn
  * @param drivePath the driving tank's top-left position per frame; empty for a fire turn
  * @param explosion the explosion, or null if the shot hit nothing
@@ -28,6 +30,8 @@ import com.plcoding.tanksmp.model.keywords.TankActionName;
 public record TurnResult(
         int actingPlayerIndex,
         TankActionName actionName,
+        int turretAngle,
+        int shotPower,
         List<Point2D> projectilePath,
         List<Point2D> drivePath,
         Explosion explosion,

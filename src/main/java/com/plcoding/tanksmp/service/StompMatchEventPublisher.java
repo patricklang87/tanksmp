@@ -18,6 +18,6 @@ public class StompMatchEventPublisher implements MatchEventPublisher {
 
     @Override
     public void publish(MatchEvent matchEvent) {
-        simpMessagingTemplate.convertAndSend(GAME_PROGRESS_TOPIC + matchEvent.game().getGameId(), matchEvent);
+        simpMessagingTemplate.convertAndSend(GAME_PROGRESS_TOPIC + matchEvent.gameId(), matchEvent);
     }
 }
