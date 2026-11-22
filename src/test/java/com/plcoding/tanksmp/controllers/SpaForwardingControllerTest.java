@@ -39,7 +39,8 @@ class SpaForwardingControllerTest {
     @Test
     void apiRootIsNotForwarded() throws Exception {
         mockMvc.perform(get("/api"))
-                .andExpect(forwardedUrl(null));
+                .andExpect(forwardedUrl(null))
+                .andExpect(status().isNotFound());
     }
 
     @Test

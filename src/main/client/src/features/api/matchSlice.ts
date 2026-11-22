@@ -1,8 +1,6 @@
 import { connectToSocket } from "./stompConnection";
 import apiSlice from "./apiSlice";
 
-// json-server --watch data/db.json --port 8080
-
 // https://wanago.io/2022/01/03/websockets-redux-toolkit-query-typescript/
 
 // https://redux-toolkit.js.org/rtk-query/usage/mutations

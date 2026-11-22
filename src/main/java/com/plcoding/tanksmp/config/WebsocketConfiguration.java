@@ -25,7 +25,8 @@ public class WebsocketConfiguration implements WebSocketMessageBrokerConfigurer 
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Same-origin handshakes are always accepted; these are extra allowed origins.
+        // Same-origin handshakes are always accepted (relies on server.forward-headers-strategy=framework
+        // behind Render's proxy); these are extra allowed origins.
         registry.addEndpoint("/ws")
                 .setAllowedOrigins(allowedOrigins)
                 .withSockJS();
