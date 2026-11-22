@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSubmitTurnMutation } from "../../api/matchSlice";
 import { getErrorMessage } from "../../api/errorMessage";
+import { sendAimUpdate } from "../../api/stompConnection";
+import { throttle } from "../../../util/throttle";
 import { useAppSelector } from "../../../redux/hooks";
 import { selectPlayerIndex, selectPlayerToken } from "../../../redux/sessionSlice";
 import { selectIsReplayInProgress } from "../../../redux/turnAnimationSlice";
@@ -9,6 +11,9 @@ import type { Game, Tank, TankAction, TankActionName, TurnCommand } from "../../
 export const MIN_SHOT_POWER = 0;
 export const MAX_SHOT_POWER = 100;
 export const MAX_DRIVE_DISTANCE = 150;
+
+/** Live aim updates go out at most this often; the newest value always follows. */
+export const AIM_UPDATE_INTERVAL_MILLISECONDS = 100;
 
 const DEFAULT_ACTION_NAME: TankActionName = "STANDARD_SHOT";
 
@@ -67,6 +72,26 @@ export const useControlPanel = (game: Game) => {
     !isSubmitting &&
     !hasAlreadySubmittedThisTurn;
 
+  // Let the other players watch the aim being set up. Display only: the turn itself always carries
+  // the values from the Fire button. Only sent while this player may act.
+  const throttledSendAim = useMemo(
+    () => throttle(sendAimUpdate, AIM_UPDATE_INTERVAL_MILLISECONDS),
+    []
+  );
+  useEffect(() => {
+    if (!canAct || !playerToken) {
+      throttledSendAim.cancel();
+      return;
+    }
+    throttledSendAim(game.gameId, {
+      playerToken,
+      turretAngle,
+      shotPower,
+      selectedActionName,
+    });
+  }, [canAct, playerToken, game.gameId, turretAngle, shotPower, selectedActionName, throttledSendAim]);
+  useEffect(() => () => throttledSendAim.cancel(), [throttledSendAim]);
+
   const buildCommand = (): TurnCommand =>
     isDriveSelected
       ? { actionName: "DRIVE", driveDistance }
@@ -96,6 +121,7 @@ export const useControlPanel = (game: Game) => {
     shotPower,
     driveDistance,
     canAct,
+    isReplayInProgress,
     isSubmitting,
     errorMessage,
     selectAction: setChosenActionName,

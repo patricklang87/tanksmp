@@ -135,3 +135,29 @@ describe("buildTankSprites local aim", () => {
     expect(sprites[1].turretAngle).toBe(-30);
   });
 });
+
+describe("buildTankSprites turret during a replay", () => {
+  it("draws the acting tank at the angle the server resolved the turn with", () => {
+    const livePlayers = buildRunningGame().players;
+    livePlayers[0].tank.turretAngle = -170; // stale live aim from before the final slider move
+    const sprites = buildTankSprites({
+      players: livePlayers,
+      activeTurn: buildTurnResult({ actingPlayerIndex: 0, turretAngle: -45 }),
+      phase: "PROJECTILE",
+      frameCount: 0,
+    });
+    expect(sprites[0].turretAngle).toBe(-45);
+    expect(sprites[1].turretAngle).toBe(livePlayers[1].tank.turretAngle);
+  });
+
+  it("prefers the resolved turn over the local aim for the acting tank", () => {
+    const sprites = buildTankSprites({
+      players,
+      activeTurn: buildTurnResult({ actingPlayerIndex: 1, turretAngle: -120 }),
+      phase: "PROJECTILE",
+      frameCount: 0,
+      localAim: { playerIndex: 1, turretAngle: -30 },
+    });
+    expect(sprites[1].turretAngle).toBe(-120);
+  });
+});

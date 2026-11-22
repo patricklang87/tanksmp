@@ -1,8 +1,9 @@
-import { handleMatchEvent, subscribeToMatchEvents } from "./matchEventSubscription";
+import { applyAimToGame, handleMatchEvent, subscribeToMatchEvents } from "./matchEventSubscription";
 import { connectToSocket } from "./stompConnection";
 import { setupStore } from "../../redux/store";
 import { buildRunningGame, buildTurnResult } from "../../test-utils/gameFixtures";
-import type { MatchEvent } from "../../types";
+import { seatClaimed } from "../../redux/sessionSlice";
+import type { AimUpdate, MatchEvent } from "../../types";
 
 jest.mock("./stompConnection");
 
@@ -12,10 +13,12 @@ const gameAfterTurn = buildRunningGame({ turnNumber: 1 });
 const buildDependencies = () => {
   const store = setupStore();
   const applyGame = jest.fn();
+  const applyAim = jest.fn();
   return {
     store,
     applyGame,
-    dependencies: { dispatch: store.dispatch, getState: store.getState, applyGame },
+    applyAim,
+    dependencies: { dispatch: store.dispatch, getState: store.getState, applyGame, applyAim },
   };
 };
 
@@ -44,6 +47,67 @@ describe("handleMatchEvent", () => {
     handleMatchEvent({ type: "GAME_UPDATED", game, turnResult: null }, dependencies);
     expect(applyGame).not.toHaveBeenCalled();
     expect(store.getState().turnAnimation.queue).toHaveLength(1);
+  });
+});
+
+describe("live aim events", () => {
+  const aim: AimUpdate = {
+    playerIndex: 1,
+    turretAngle: -45,
+    shotPower: 60,
+    selectedActionName: "STEEL_SHOTPUT",
+  };
+  const aimEvent: MatchEvent = { type: "AIM_UPDATED", game: null, turnResult: null, aim };
+
+  const claimSeat = (store: ReturnType<typeof setupStore>, playerIndex: number) =>
+    store.dispatch(seatClaimed({ matchId: "match-1", playerIndex, playerToken: "token" }));
+
+  it("patches another player's aim without touching the rest of the game", () => {
+    const { store, applyGame, applyAim, dependencies } = buildDependencies();
+    claimSeat(store, 0);
+    handleMatchEvent(aimEvent, dependencies);
+    expect(applyAim).toHaveBeenCalledWith(aim);
+    expect(applyGame).not.toHaveBeenCalled();
+  });
+
+  it("ignores the aim of your own player index", () => {
+    const { store, applyAim, dependencies } = buildDependencies();
+    claimSeat(store, 1);
+    handleMatchEvent(aimEvent, dependencies);
+    expect(applyAim).not.toHaveBeenCalled();
+  });
+
+  it("ignores aim updates while a replay is running", () => {
+    const { store, applyAim, dependencies } = buildDependencies();
+    claimSeat(store, 0);
+    handleMatchEvent(
+      { type: "TURN_RESOLVED", game: gameAfterTurn, turnResult: buildTurnResult() },
+      dependencies
+    );
+    handleMatchEvent(aimEvent, dependencies);
+    expect(applyAim).not.toHaveBeenCalled();
+  });
+
+  it("applyAimToGame changes only the aiming player's turret angle, power and selected action", () => {
+    const patchedGame = buildRunningGame();
+    const untouchedGame = buildRunningGame();
+
+    applyAimToGame(patchedGame, aim);
+
+    expect(patchedGame.players[1].tank).toEqual({
+      ...untouchedGame.players[1].tank,
+      turretAngle: -45,
+      shotPower: 60,
+      selectedAction: "STEEL_SHOTPUT",
+    });
+    expect(patchedGame.players[0]).toEqual(untouchedGame.players[0]);
+    expect(patchedGame.turnNumber).toBe(untouchedGame.turnNumber);
+  });
+
+  it("applyAimToGame ignores an unknown player index", () => {
+    const patchedGame = buildRunningGame();
+    expect(() => applyAimToGame(patchedGame, { ...aim, playerIndex: 5 })).not.toThrow();
+    expect(patchedGame).toEqual(buildRunningGame());
   });
 });
 

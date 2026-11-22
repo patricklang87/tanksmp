@@ -55,6 +55,22 @@ export const getFallFrameCount = (players: Player[], activeTurn: TurnResult): nu
   return Math.ceil(Math.max(0, ...fallDistances) / environmentConstants.fallAnimationSpeed);
 };
 
+/**
+ * The turret angle to draw: the acting tank uses the angle the server resolved the turn with, the
+ * local player's tank follows their sliders, and every other tank shows the aim stored on it (which
+ * is kept current by live aim updates).
+ */
+const getTurretAngle = (
+  player: Player,
+  playerIndex: number,
+  activeTurn: TurnResult | null,
+  localAim?: LocalAim
+): number => {
+  if (activeTurn?.actingPlayerIndex === playerIndex) return activeTurn.turretAngle;
+  if (localAim?.playerIndex === playerIndex) return localAim.turretAngle;
+  return player.tank.turretAngle;
+};
+
 /** The aim the local player is setting up; it is previewed on their own turret only. */
 export type LocalAim = { playerIndex: number; turretAngle: number };
 
@@ -83,7 +99,7 @@ export const buildTankSprites = ({
       position,
       color: isStruck ? designConstants.struckTankColor : tankColor[player.tank.colorIndex],
       shields: damageIsVisible && activeTurn ? activeTurn.shieldsAfter[playerIndex] : player.tank.shields,
-      turretAngle: localAim?.playerIndex === playerIndex ? localAim.turretAngle : player.tank.turretAngle,
+      turretAngle: getTurretAngle(player, playerIndex, activeTurn, localAim),
     });
   });
   return sprites;

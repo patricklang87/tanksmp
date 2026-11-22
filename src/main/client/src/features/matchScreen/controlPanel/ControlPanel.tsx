@@ -22,6 +22,7 @@ const ControlPanel = ({ game, controlPanel }: ControlPanelProps) => {
     shotPower,
     driveDistance,
     canAct,
+    isReplayInProgress,
     errorMessage,
     selectAction,
     setTurretAngle,
@@ -35,7 +36,11 @@ const ControlPanel = ({ game, controlPanel }: ControlPanelProps) => {
   return (
     <section className="control-panel" aria-label="Control panel">
       {currentPlayer && (
-        <CurrentPlayerIndicator currentPlayer={currentPlayer} isOwnTurn={isOwnTurn} />
+        <CurrentPlayerIndicator
+          currentPlayer={currentPlayer}
+          isOwnTurn={isOwnTurn}
+          showLiveAim={game.gameStatus === "IN_PROGRESS" && !isReplayInProgress}
+        />
       )}
       <ShieldsPanel players={game.players} />
       {ownTank && (

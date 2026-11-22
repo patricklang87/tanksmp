@@ -6,6 +6,7 @@ import { useControlPanel } from "./useControlPanel";
 import { setupStore } from "../../../redux/store";
 import { turnEnqueued } from "../../../redux/turnAnimationSlice";
 import { useSubmitTurnMutation } from "../../api/matchSlice";
+import { sendAimUpdate } from "../../api/stompConnection";
 import { rejectingTrigger, resolvingTrigger, serverError } from "../../../test-utils/matchApiMocks";
 import { buildRunningGame, buildTurnResult } from "../../../test-utils/gameFixtures";
 import type { Game } from "../../../types";
@@ -160,6 +161,29 @@ describe("ControlPanel", () => {
     );
   });
 
+  it("falls back to the standard shot when the chosen weapon runs out of rounds", async () => {
+    const user = userEvent.setup();
+    const { rerender, store, submitTurn } = renderControlPanel();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Action" }), "Steel Shotput");
+    expect(screen.getByText("Rounds left: 3")).toBeInTheDocument();
+
+    const gameWithoutSteelRounds = buildRunningGame();
+    gameWithoutSteelRounds.players[0].tank.remainingRounds = { STEEL_SHOTPUT: 0, BEGEMOT: 1 };
+    rerender(
+      <Provider store={store}>
+        <ControlPanelHarness game={gameWithoutSteelRounds} />
+      </Provider>
+    );
+    expect(screen.getByText("Rounds left: unlimited")).toBeInTheDocument();
+    await user.click(fireButton());
+
+    expect(submitTurn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        command: expect.objectContaining({ actionName: "STANDARD_SHOT" }),
+      })
+    );
+  });
+
   it("shows unlimited rounds for the standard shot", () => {
     renderControlPanel();
     expect(screen.getByText("Rounds left: unlimited")).toBeInTheDocument();
@@ -201,5 +225,95 @@ describe("ControlPanel", () => {
       </Provider>
     );
     expect(fireButton()).toBeEnabled();
+  });
+
+  describe("live aim updates", () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+      jest.mocked(sendAimUpdate).mockClear();
+    });
+    afterEach(() => jest.useRealTimers());
+
+    it("sends the aim on your turn, throttled, ending on the final value, with your token", () => {
+      renderControlPanel();
+      // The aim is announced as soon as the turn starts.
+      expect(sendAimUpdate).toHaveBeenCalledTimes(1);
+      expect(sendAimUpdate).toHaveBeenLastCalledWith("match-1", {
+        playerToken: "token-0",
+        turretAngle: -90,
+        shotPower: 50,
+        selectedActionName: "STANDARD_SHOT",
+      });
+
+      fireEvent.change(angleSlider(), { target: { value: "100" } });
+      fireEvent.change(angleSlider(), { target: { value: "110" } });
+      fireEvent.change(powerSlider(), { target: { value: "80" } });
+      expect(sendAimUpdate).toHaveBeenCalledTimes(1);
+
+      act(() => {
+        jest.advanceTimersByTime(100);
+      });
+      expect(sendAimUpdate).toHaveBeenCalledTimes(2);
+      expect(sendAimUpdate).toHaveBeenLastCalledWith("match-1", {
+        playerToken: "token-0",
+        turretAngle: -70,
+        shotPower: 80,
+        selectedActionName: "STANDARD_SHOT",
+      });
+    });
+
+    it("sends the selected action when it changes", () => {
+      renderControlPanel();
+      act(() => {
+        jest.advanceTimersByTime(100);
+      });
+      fireEvent.change(screen.getByRole("combobox", { name: "Action" }), {
+        target: { value: "STEEL_SHOTPUT" },
+      });
+      expect(sendAimUpdate).toHaveBeenLastCalledWith(
+        "match-1",
+        expect.objectContaining({ selectedActionName: "STEEL_SHOTPUT" })
+      );
+    });
+
+    it("sends nothing when it is another player's turn", () => {
+      renderControlPanel({ playerIndex: 1 });
+      act(() => {
+        jest.advanceTimersByTime(500);
+      });
+      expect(sendAimUpdate).not.toHaveBeenCalled();
+    });
+
+    it("sends nothing while a replay is running or after the turn is submitted", async () => {
+      const { store } = renderControlPanel();
+      act(() => {
+        jest.advanceTimersByTime(100);
+      });
+      expect(sendAimUpdate).toHaveBeenCalledTimes(1);
+
+      // A change followed by a replay starting: the pending trailing update is dropped.
+      fireEvent.change(angleSlider(), { target: { value: "100" } });
+      act(() => {
+        store.dispatch(
+          turnEnqueued({
+            turnResult: buildTurnResult({ actingPlayerIndex: 1 }),
+            resultingGame: buildRunningGame({ turnNumber: 1 }),
+          })
+        );
+      });
+      fireEvent.change(angleSlider(), { target: { value: "120" } });
+      act(() => {
+        jest.advanceTimersByTime(500);
+      });
+      expect(sendAimUpdate).toHaveBeenCalledTimes(2);
+    });
+
+    it("sends nothing when the match is not in progress", () => {
+      renderControlPanel({ game: buildRunningGame({ gameStatus: "FINISHED", winnerIndex: 1 }) });
+      act(() => {
+        jest.advanceTimersByTime(500);
+      });
+      expect(sendAimUpdate).not.toHaveBeenCalled();
+    });
   });
 });

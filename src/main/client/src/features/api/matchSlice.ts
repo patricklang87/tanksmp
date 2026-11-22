@@ -1,4 +1,4 @@
-import { subscribeToMatchEvents } from "./matchEventSubscription";
+import { applyAimToGame, subscribeToMatchEvents } from "./matchEventSubscription";
 import type { RootState } from "../../redux/store";
 import apiSlice from "./apiSlice";
 import type {
@@ -29,6 +29,7 @@ export const matchApi = apiSlice.injectEndpoints({
           dispatch,
           getState: () => getState() as RootState,
           applyGame: (game) => updateCachedData(() => game),
+          applyAim: (aim) => updateCachedData((cachedGame) => applyAimToGame(cachedGame, aim)),
           refetchMatch: () =>
             dispatch(
               matchApi.endpoints.getMatch.initiate(matchId, {
