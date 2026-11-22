@@ -53,7 +53,7 @@ class GameServiceTest {
         assertThat(player.getName()).isEqualTo("alice");
         assertThat(player.getPlayerGameId()).isZero();
         assertThat(player.getTank().getShields()).isEqualTo(100);
-        assertThat(player.getTank().getRequestedColor()).isEqualTo(2);
+        assertThat(player.getTank().getColorIndex()).isEqualTo(2);
         assertThat(player.getTank().getSelectedAction()).isEqualTo(TankActionName.STANDARD_SHOT);
         assertThat(joined.getClaimedColors()[2]).isEqualTo("alice");
 

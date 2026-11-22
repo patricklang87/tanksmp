@@ -1,6 +1,7 @@
 package com.plcoding.tanksmp.service;
 
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 import lombok.AllArgsConstructor;
 
 import com.plcoding.tanksmp.customTypes.Point2D;
+import com.plcoding.tanksmp.engine.TerrainGenerator;
 import com.plcoding.tanksmp.exceptions.GameNotFoundException;
 import com.plcoding.tanksmp.exceptions.InvalidGameStateException;
 import com.plcoding.tanksmp.exceptions.InvalidRequestException;
@@ -15,7 +17,6 @@ import com.plcoding.tanksmp.model.Game;
 import com.plcoding.tanksmp.model.GameStatus;
 import com.plcoding.tanksmp.model.Player;
 import com.plcoding.tanksmp.model.Tank;
-import com.plcoding.tanksmp.model.Topography;
 import com.plcoding.tanksmp.model.constants.GameConstants;
 import com.plcoding.tanksmp.model.keywords.ColorSchemas;
 import com.plcoding.tanksmp.storage.GameStorage;
@@ -30,7 +31,7 @@ public class GameService {
         Game game = new Game();
         game.setGameId(UUID.randomUUID().toString());
         game.setId(game.getGameId());
-        ArrayList<Point2D> topography = new Topography().createInitialTopography();
+        ArrayList<Point2D> topography = new ArrayList<>(new TerrainGenerator(new Random()).generate());
 
         game.setTopography(topography);
         game.setGameStatus(GameStatus.NEW);
@@ -76,7 +77,7 @@ public class GameService {
             throw new InvalidRequestException("That tank color has already been claimed.");
         }
 
-        Tank newTank = new Tank().initializeTank(requestedColor);
+        Tank newTank = Tank.createDefault(requestedColor);
         requestedGame.getClaimedColors()[requestedColor] = playerName;
         Player newPlayer = new Player(playerName, newTank, currentPlayerCount, 0);
         requestedGame.getPlayers().add(newPlayer);
