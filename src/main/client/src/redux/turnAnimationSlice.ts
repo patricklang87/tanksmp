@@ -7,8 +7,7 @@ export type TurnAnimationPhase = "DRIVING" | "PROJECTILE" | "EXPLOSION" | "FALLI
 
 /** Something the server told us that has to be shown in order, after earlier replays finish. */
 type QueuedEvent =
-  | { kind: "turn"; turnResult: TurnResult; resultingGame: Game }
-  | { kind: "update"; game: Game };
+  { kind: "turn"; turnResult: TurnResult; resultingGame: Game } | { kind: "update"; game: Game };
 
 export interface TurnAnimationState {
   phase: TurnAnimationPhase;
@@ -53,7 +52,7 @@ const phaseHasWork = (phase: TurnAnimationPhase, turnResult: TurnResult): boolea
 /** The next phase after `currentPhase` that has something to show, or IDLE if the replay is over. */
 export const nextPhaseOf = (
   turnResult: TurnResult,
-  currentPhase: TurnAnimationPhase
+  currentPhase: TurnAnimationPhase,
 ): TurnAnimationPhase => {
   const phases = turnResult.actionName === "DRIVE" ? driveTurnPhases : fireTurnPhases;
   const startIndex = currentPhase === "IDLE" ? 0 : phases.indexOf(currentPhase) + 1;
@@ -90,7 +89,7 @@ const turnAnimationSlice = createSlice({
   reducers: {
     turnEnqueued: (
       state,
-      action: PayloadAction<{ turnResult: TurnResult; resultingGame: Game }>
+      action: PayloadAction<{ turnResult: TurnResult; resultingGame: Game }>,
     ) => {
       state.queue.push({ kind: "turn", ...action.payload });
       startNextQueuedEvent(state);
@@ -127,7 +126,7 @@ const turnAnimationSlice = createSlice({
       const newestQueuedGame = [...state.queue]
         .reverse()
         .map((queuedEvent) =>
-          queuedEvent.kind === "turn" ? queuedEvent.resultingGame : queuedEvent.game
+          queuedEvent.kind === "turn" ? queuedEvent.resultingGame : queuedEvent.game,
         )[0];
       const newestGame = newestQueuedGame ?? state.activeResultingGame ?? state.gameToApply;
       state.queue = [];
@@ -139,11 +138,14 @@ const turnAnimationSlice = createSlice({
   },
 });
 
-export const { turnEnqueued, gameUpdateReceived, phaseCompleted, gameApplied,
+export const {
+  turnEnqueued,
+  gameUpdateReceived,
+  phaseCompleted,
+  gameApplied,
   replayDiscarded,
   turnAnimationReset,
-} =
-  turnAnimationSlice.actions;
+} = turnAnimationSlice.actions;
 
 export const selectTurnAnimationPhase = (state: RootState) => state.turnAnimation.phase;
 export const selectActiveTurn = (state: RootState) => state.turnAnimation.activeTurn;
@@ -154,7 +156,7 @@ export const selectIsReplayInProgress = (state: RootState) => isReplayBusy(state
 export const applyPendingGame = (
   dispatch: Dispatch,
   getState: () => RootState,
-  applyGame: (game: Game) => void
+  applyGame: (game: Game) => void,
 ): void => {
   const pendingGame = getState().turnAnimation.gameToApply;
   if (!pendingGame) return;

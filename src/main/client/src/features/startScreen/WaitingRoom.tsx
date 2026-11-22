@@ -43,20 +43,21 @@ const WaitingRoom = ({
         <>
           <button
             type="button"
+            className="button-primary"
             onClick={onStartMatch}
             disabled={!hasEnoughPlayers || isStarting}
           >
             {isStarting ? "Starting..." : "Start Game"}
           </button>
           {!hasEnoughPlayers && (
-            <p>
+            <p className="waiting-hint">
               Waiting for at least {lobbyConstants.minPlayersToStart} players. Share the match ID
               above!
             </p>
           )}
         </>
       ) : (
-        <p>Waiting for the host to start the match...</p>
+        <p className="waiting-hint">Waiting for the host to start the match...</p>
       )}
     </>
   );

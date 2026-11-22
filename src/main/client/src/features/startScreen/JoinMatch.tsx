@@ -37,10 +37,9 @@ const JoinMatch = ({
         requestedColor={requestedColor}
       />
 
-      <form onSubmit={onSubmit}>
+      <form className="lobby-form" onSubmit={onSubmit}>
         <label className="form-label" htmlFor="playerName">
           <strong>Enter Player Name</strong>
-          <br />
         </label>
         <input
           type="text"
@@ -50,13 +49,14 @@ const JoinMatch = ({
           value={playerName}
           onChange={(event) => onPlayerNameChange(event.target.value)}
         />
-        <br />
-        <button type="button" onClick={onBack}>
-          Back
-        </button>
-        <button type="submit" disabled={isJoinDisabled}>
-          {isJoining ? "Joining..." : "Join"}
-        </button>
+        <div className="lobby-form-buttons">
+          <button type="button" onClick={onBack}>
+            Back
+          </button>
+          <button type="submit" className="button-primary" disabled={isJoinDisabled}>
+            {isJoining ? "Joining..." : "Join"}
+          </button>
+        </div>
       </form>
     </>
   );

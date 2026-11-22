@@ -11,7 +11,7 @@ const GameIdDisplay = ({ gameId }: { gameId: string }) => {
         <p>
           <strong>Match ID</strong>
           <br />
-          {gameId}
+          <span className="game-id-value">{gameId}</span>
         </p>
       </div>
       <div className="game-id-flex-item">

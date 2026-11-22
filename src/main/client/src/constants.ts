@@ -1,5 +1,8 @@
 import { Action, ColorScheme } from "./types";
 
+/** The game's name, shown in the page title and on the start screen. */
+export const GAME_TITLE = "Tanks fer Nuffin'";
+
 export const canvasConstants: { width: number; height: number } = {
   width: 1400,
   height: 600,
@@ -23,25 +26,25 @@ export const designConstants: {
   devGridSmallLineWidth: 1,
 };
 
-export const colorSchemes : {
+export const colorSchemes: {
   DAY_COLORS: ColorScheme;
   DUSK_COLORS: ColorScheme;
 } = {
   DAY_COLORS: {
-      lowSkyColor: "beige",
+    lowSkyColor: "beige",
     skyColor: "skyblue",
-      landscapeStrokeStyle: "darkgreen",
-      landscapeFillStyle: "lightgreen",
-      cloudColor: "white",
-    },
+    landscapeStrokeStyle: "darkgreen",
+    landscapeFillStyle: "lightgreen",
+    cloudColor: "white",
+  },
   DUSK_COLORS: {
-      lowSkyColor: "#f06a41",
+    lowSkyColor: "#f06a41",
     skyColor: "#0f013b",
-      landscapeStrokeStyle: "#016308",
-      landscapeFillStyle: "#013b2c",
-      cloudColor: "hotpink",
-    }
-}
+    landscapeStrokeStyle: "#016308",
+    landscapeFillStyle: "#013b2c",
+    cloudColor: "hotpink",
+  },
+};
 
 export const topographyConstants: {
   increments: number;
