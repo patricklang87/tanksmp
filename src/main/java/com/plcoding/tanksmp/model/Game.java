@@ -23,6 +23,9 @@ public class Game {
     private List<Cloud> clouds = new ArrayList<>();
     private String colorSchema;
     private int currentPlayerIndex;
+    /** Who took the first turn of the current round; each rematch hands the first turn to the next player. Internal. */
+    @JsonIgnore
+    private int startingPlayerIndex;
     /** Index of the player who may start the match: the first to join; null until someone joins. */
     private Integer hostPlayerIndex;
     /** Null while the match continues; the survivor's index once it is over, or -1 if nobody survived. */
@@ -55,6 +58,7 @@ public class Game {
                 .toList();
         copy.colorSchema = colorSchema;
         copy.currentPlayerIndex = currentPlayerIndex;
+        copy.startingPlayerIndex = startingPlayerIndex;
         copy.hostPlayerIndex = hostPlayerIndex;
         copy.winnerIndex = winnerIndex;
         copy.turnNumber = turnNumber;

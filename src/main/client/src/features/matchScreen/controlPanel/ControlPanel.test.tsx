@@ -316,4 +316,48 @@ describe("ControlPanel", () => {
       expect(sendAimUpdate).not.toHaveBeenCalled();
     });
   });
+
+  it("unlocks again for a rematch that starts back at turn 0", async () => {
+    const user = userEvent.setup();
+    const { rerender, store, submitTurn } = renderControlPanel();
+    await user.click(fireButton());
+    expect(submitTurn).toHaveBeenCalledTimes(1);
+    // the turn is locked until the game moves on
+    expect(fireButton()).toBeDisabled();
+
+    const rerenderWith = (game: Game) =>
+      rerender(
+        <Provider store={store}>
+          <ControlPanelHarness game={game} />
+        </Provider>
+      );
+    rerenderWith(buildRunningGame({ gameStatus: "FINISHED", winnerIndex: 0, turnNumber: 1 }));
+    expect(fireButton()).toBeDisabled();
+    rerenderWith(buildRunningGame({ gameStatus: "IN_PROGRESS", turnNumber: 0 }));
+
+    expect(fireButton()).toBeEnabled();
+    await user.click(fireButton());
+    expect(submitTurn).toHaveBeenCalledTimes(2);
+  });
+
+  it("resets the local aim and chosen action for the new match", async () => {
+    const user = userEvent.setup();
+    const { rerender, store } = renderControlPanel();
+    fireEvent.change(angleSlider(), { target: { value: "20" } });
+    fireEvent.change(powerSlider(), { target: { value: "90" } });
+    await user.selectOptions(screen.getByRole("combobox", { name: "Action" }), "Begemot");
+
+    const rerenderWith = (game: Game) =>
+      rerender(
+        <Provider store={store}>
+          <ControlPanelHarness game={game} />
+        </Provider>
+      );
+    rerenderWith(buildRunningGame({ gameStatus: "FINISHED", winnerIndex: 0, turnNumber: 4 }));
+    rerenderWith(buildRunningGame({ turnNumber: 0 }));
+
+    expect(angleSlider()).toHaveValue("90");
+    expect(powerSlider()).toHaveValue("50");
+    expect(screen.getByRole("combobox", { name: "Action" })).toHaveValue("STANDARD_SHOT");
+  });
 });

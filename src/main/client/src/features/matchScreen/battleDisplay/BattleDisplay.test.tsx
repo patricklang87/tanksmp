@@ -7,8 +7,10 @@ import { buildRunningGame, buildTurnResult } from "../../../test-utils/gameFixtu
 
 jest.mock("../../api/stompConnection");
 
-const renderBattleDisplay = (game = buildRunningGame()) => {
-  const store = setupStore();
+const renderBattleDisplay = (game = buildRunningGame(), playerIndex: number | null = null) => {
+  const store = setupStore({
+    session: { matchId: game.gameId, playerIndex, playerToken: playerIndex === null ? null : `token-${playerIndex}` },
+  });
   const view = render(
     <Provider store={store}>
       <BattleDisplay game={game} />
@@ -70,5 +72,17 @@ describe("BattleDisplay", () => {
     expect(screen.queryByRole("img", { name: "Explosion" })).not.toBeInTheDocument();
     // The thunk consumed the game and wrote it to the match cache.
     expect(store.getState().turnAnimation.gameToApply).toBeNull();
+  });
+
+  it("offers the Rematch button only to the host of a finished match", () => {
+    const finishedGame = buildRunningGame({ gameStatus: "FINISHED", winnerIndex: 1 });
+    const { unmount } = renderBattleDisplay(finishedGame, 0);
+    expect(screen.getByRole("button", { name: "Rematch" })).toBeInTheDocument();
+    expect(screen.queryByText("Waiting for the host…")).not.toBeInTheDocument();
+    unmount();
+
+    renderBattleDisplay(finishedGame, 1);
+    expect(screen.queryByRole("button", { name: "Rematch" })).not.toBeInTheDocument();
+    expect(screen.getByText("Waiting for the host…")).toBeInTheDocument();
   });
 });

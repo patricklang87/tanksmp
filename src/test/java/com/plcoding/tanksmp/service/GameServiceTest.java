@@ -784,4 +784,232 @@ class GameServiceTest {
         assertThat(turnEvent.turnResult().turretAngle()).isEqualTo(-60);
         assertThat(turnEvent.turnResult().shotPower()).isEqualTo(70);
     }
+
+    /** Plays a started two-player match to its end with player 0 (the host) winning. */
+    private void finishMatchWithHostWinning(List<String> tokens) {
+        FlatGroundDuel.arrange(game);
+        FlatGroundDuel.Shot shot = FlatGroundDuel.findWinningShot();
+        gameService.takeTurn(game.getGameId(), fireCommand(shot.turretAngle(), shot.shotPower()), tokens.get(0));
+        assertThat(game.getGameStatus()).isEqualTo(GameStatus.FINISHED);
+    }
+
+    private void finishMatchWithNoSurvivor(List<String> tokens) {
+        FlatGroundDuel.arrange(game);
+        game.getPlayers().get(0).getTank().setShields(1);
+        game.getPlayers().get(1).getTank().setShields(0);
+        gameService.takeTurn(game.getGameId(), fireCommand(-90, 0), tokens.get(0));
+        assertThat(game.getWinnerIndex()).isEqualTo(EngineConstants.NO_SURVIVOR_INDEX);
+    }
+
+    private long gameUpdatedEventCount() {
+        return recordedEvents.stream().filter(event -> event.type() == MatchEvent.MatchEventType.GAME_UPDATED)
+                .count();
+    }
+
+    @Test
+    void rematchIsRejectedForANonHostPlayerWithForbidden() {
+        List<String> tokens = startTwoPlayerMatch();
+        finishMatchWithHostWinning(tokens);
+
+        assertThatThrownBy(() -> gameService.rematch(game.getGameId(), tokens.get(1)))
+                .isInstanceOf(ForbiddenException.class);
+        assertThat(game.getGameStatus()).isEqualTo(GameStatus.FINISHED);
+    }
+
+    @Test
+    void rematchIsRejectedWhileTheMatchIsNotFinished() {
+        List<String> tokens = startTwoPlayerMatch();
+
+        assertThatThrownBy(() -> gameService.rematch(game.getGameId(), tokens.get(0)))
+                .isInstanceOf(InvalidGameStateException.class);
+    }
+
+    @Test
+    void rematchChecksTheTokenBeforeTheMatchStatus() {
+        startTwoPlayerMatch();
+
+        assertThatThrownBy(() -> gameService.rematch(game.getGameId(), UUID.randomUUID().toString()))
+                .isInstanceOf(ForbiddenException.class);
+        assertThatThrownBy(() -> gameService.rematch(game.getGameId(), null))
+                .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    void rematchRejectsUnknownMatch() {
+        assertThatThrownBy(() -> gameService.rematch("no-such-match", UUID.randomUUID().toString()))
+                .isInstanceOf(GameNotFoundException.class);
+    }
+
+    @Test
+    void rematchResetsTheWholeMatchState() {
+        List<String> tokens = startTwoPlayerMatch();
+        finishMatchWithHostWinning(tokens);
+        game.getPlayers().get(0).getTank().setShields(40);
+        game.getPlayers().get(0).getTank().getRemainingRounds().put(TankActionName.STEEL_SHOTPUT, 0);
+        game.getPlayers().get(0).getTank().setSelectedAction(TankActionName.BEGEMOT);
+        game.getPlayers().get(0).getTank().setTurretAngle(-30);
+        game.getPlayers().get(0).getTank().setShotPower(99);
+        game.getPlayers().get(0).getTank().setDriveDistance(70);
+        List<?> topographyBefore = List.copyOf(game.getTopography());
+        List<?> cloudsBefore = List.copyOf(game.getClouds());
+        List<?> tankPositionsBefore = game.getPlayers().stream().map(player -> player.getTank().getPosition())
+                .toList();
+        Instant finishedAt = game.getLastActivityAt();
+        clock.advance(Duration.ofMinutes(1));
+
+        Game restarted = gameService.rematch(game.getGameId(), tokens.get(0));
+
+        assertThat(restarted.getGameStatus()).isEqualTo(GameStatus.IN_PROGRESS);
+        assertThat(restarted.getTurnNumber()).isZero();
+        assertThat(restarted.getWinnerIndex()).isNull();
+        assertThat(restarted.getTopography()).isNotEmpty().isNotEqualTo(topographyBefore);
+        assertThat(restarted.getClouds()).isNotEmpty().isNotEqualTo(cloudsBefore);
+        assertThat(restarted.getColorSchema()).isIn(
+                ColorSchemas.DAY_COLORS.toString(), ColorSchemas.DUSK_COLORS.toString());
+        assertThat(restarted.getPlayers()).extracting(player -> player.getTank().getPosition())
+                .isNotEqualTo(tankPositionsBefore).doesNotContainNull();
+        for (Player player : restarted.getPlayers()) {
+            Tank tank = player.getTank();
+            assertThat(tank.getShields()).isEqualTo(100);
+            assertThat(tank.getSelectedAction()).isEqualTo(TankActionName.STANDARD_SHOT);
+            assertThat(tank.getTurretAngle()).isEqualTo(-90);
+            assertThat(tank.getShotPower()).isEqualTo(50);
+            assertThat(tank.getDriveDistance()).isZero();
+            assertThat(tank.getRemainingRounds()).isEqualTo(Tank.createDefault(0).getRemainingRounds());
+        }
+        assertThat(restarted.getPlayers()).extracting(player -> player.getTank().getColorIndex())
+                .containsExactly(0, 1);
+        assertThat(restarted.getPlayers()).extracting(Player::getName).containsExactly("alice", "bob");
+        assertThat(game.getLastActivityAt()).isAfter(finishedAt);
+    }
+
+    @Test
+    void rematchGivesTheNewTerrainTheSameResultForTheSameSeed() {
+        List<String> tokens = startTwoPlayerMatch();
+        finishMatchWithHostWinning(tokens);
+        Game restarted = gameService.rematch(game.getGameId(), tokens.get(0));
+
+        GameStorage otherStorage = new GameStorage();
+        GameService otherService = new GameService(otherStorage, new Random(42), clock, event -> { });
+        Game otherGame = otherStorage.findById(otherService.initializeGame().getGameId()).orElseThrow();
+        String otherHostToken = otherService.joinGame("alice", 0, otherGame.getGameId()).playerToken();
+        String otherGuestToken = otherService.joinGame("bob", 1, otherGame.getGameId()).playerToken();
+        otherService.startGame(otherGame.getGameId(), otherHostToken);
+        FlatGroundDuel.arrange(otherGame);
+        FlatGroundDuel.Shot shot = FlatGroundDuel.findWinningShot();
+        otherService.takeTurn(otherGame.getGameId(), fireCommand(shot.turretAngle(), shot.shotPower()),
+                otherHostToken);
+        Game otherRestarted = otherService.rematch(otherGame.getGameId(), otherHostToken);
+
+        assertThat(otherGuestToken).isNotBlank();
+        assertThat(otherRestarted.getClouds()).isEqualTo(restarted.getClouds());
+        assertThat(otherRestarted.getColorSchema()).isEqualTo(restarted.getColorSchema());
+        assertThat(otherRestarted.getTopography()).isEqualTo(restarted.getTopography());
+    }
+
+    @Test
+    void rematchAddsAWinToTheWinnerOnly() {
+        List<String> tokens = startTwoPlayerMatch();
+        finishMatchWithHostWinning(tokens);
+
+        Game restarted = gameService.rematch(game.getGameId(), tokens.get(0));
+
+        assertThat(restarted.getPlayers()).extracting(Player::getWins).containsExactly(1, 0);
+    }
+
+    @Test
+    void rematchAddsNoWinWhenNobodySurvived() {
+        List<String> tokens = startTwoPlayerMatch();
+        finishMatchWithNoSurvivor(tokens);
+
+        Game restarted = gameService.rematch(game.getGameId(), tokens.get(0));
+
+        assertThat(restarted.getPlayers()).extracting(Player::getWins).containsExactly(0, 0);
+        assertThat(restarted.getWinnerIndex()).isNull();
+    }
+
+    @Test
+    void rematchStartsWithTheNextPlayerAfterThePreviousFirstPlayerAndRotatesAgain() {
+        List<String> tokens = startTwoPlayerMatch();
+        assertThat(game.getCurrentPlayerIndex()).isZero();
+        finishMatchWithHostWinning(tokens);
+
+        Game firstRematch = gameService.rematch(game.getGameId(), tokens.get(0));
+        assertThat(firstRematch.getCurrentPlayerIndex()).isEqualTo(1);
+
+        // the host wins the second round too, so the first player wraps back around to the host
+        game.getPlayers().get(1).getTank().setShields(0);
+        game.setGameStatus(GameStatus.FINISHED);
+        game.setWinnerIndex(0);
+        Game secondRematch = gameService.rematch(game.getGameId(), tokens.get(0));
+        assertThat(secondRematch.getCurrentPlayerIndex()).isZero();
+        assertThat(secondRematch.getPlayers()).extracting(Player::getWins).containsExactly(2, 0);
+    }
+
+    @Test
+    void rematchClearsTheAimRateLimitSoTheFirstAimIsAcceptedImmediately() {
+        List<String> tokens = startTwoPlayerMatch();
+        gameService.updateAim(game.getGameId(), aimCommand(tokens.get(0), -100, 40));
+        assertThat(game.getLastAimAcceptedAtByPlayerIndex()).isNotEmpty();
+        finishMatchWithHostWinning(tokens);
+
+        gameService.rematch(game.getGameId(), tokens.get(0));
+
+        assertThat(game.getLastAimAcceptedAtByPlayerIndex()).isEmpty();
+        // the guest now starts and may aim straight away, with no clock movement
+        gameService.updateAim(game.getGameId(), aimCommand(tokens.get(1), -110, 45));
+        assertThat(aimEvents()).hasSize(2);
+    }
+
+    @Test
+    void rematchPublishesExactlyOneGameUpdatedEventCarryingTheNewState() {
+        List<String> tokens = startTwoPlayerMatch();
+        finishMatchWithHostWinning(tokens);
+        long updatesBefore = gameUpdatedEventCount();
+
+        Game restarted = gameService.rematch(game.getGameId(), tokens.get(0));
+
+        assertThat(gameUpdatedEventCount()).isEqualTo(updatesBefore + 1);
+        MatchEvent lastEvent = recordedEvents.get(recordedEvents.size() - 1);
+        assertThat(lastEvent.type()).isEqualTo(MatchEvent.MatchEventType.GAME_UPDATED);
+        assertThat(lastEvent.game().getGameStatus()).isEqualTo(GameStatus.IN_PROGRESS);
+        assertThat(lastEvent.game().getTurnNumber()).isZero();
+        assertThat(lastEvent.game()).isNotSameAs(game);
+        assertThat(restarted).isNotSameAs(game);
+    }
+
+    @Test
+    void failedRematchesPublishNothing() {
+        List<String> tokens = startTwoPlayerMatch();
+        int eventsBefore = recordedEvents.size();
+
+        assertThatThrownBy(() -> gameService.rematch(game.getGameId(), tokens.get(0)))
+                .isInstanceOf(InvalidGameStateException.class);
+        assertThatThrownBy(() -> gameService.rematch(game.getGameId(), tokens.get(1)))
+                .isInstanceOf(ForbiddenException.class);
+
+        assertThat(recordedEvents).hasSize(eventsBefore);
+    }
+
+    @Test
+    void rematchSnapshotAndEventNeverContainPlayerTokens() throws Exception {
+        List<String> tokens = startTwoPlayerMatch();
+        finishMatchWithHostWinning(tokens);
+
+        Game restarted = gameService.rematch(game.getGameId(), tokens.get(0));
+
+        com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        String restartedJson = objectMapper.writeValueAsString(restarted);
+        String eventJson = objectMapper.writeValueAsString(recordedEvents.get(recordedEvents.size() - 1));
+        for (String json : List.of(restartedJson, eventJson)) {
+            assertThat(json).doesNotContain(tokens.get(0)).doesNotContain(tokens.get(1))
+                    .doesNotContain("playerToken").doesNotContain("startingPlayerIndex");
+        }
+        assertThat(restarted.getPlayers()).allSatisfy(player -> assertThat(player.getPlayerToken()).isNull());
+    }
+
+    @Test
+    void aimUpdateCommandToStringDoesNotRevealTheToken() {
+        assertThat(aimCommand("secret-token", -90, 50).toString()).doesNotContain("secret-token");
+    }
 }

@@ -120,6 +120,8 @@ const turnAnimationSlice = createSlice({
     gameApplied: (state) => {
       state.gameToApply = null;
     },
+    /** A new match has begun: forget any replay or queued game from the previous one. */
+    turnAnimationReset: (state) => ({ ...initialState, replayId: state.replayId + 1 }),
     /** Skips whatever is left of the replay, keeping the newest game so nothing is lost. */
     replayDiscarded: (state) => {
       const newestQueuedGame = [...state.queue]
@@ -137,7 +139,10 @@ const turnAnimationSlice = createSlice({
   },
 });
 
-export const { turnEnqueued, gameUpdateReceived, phaseCompleted, gameApplied, replayDiscarded } =
+export const { turnEnqueued, gameUpdateReceived, phaseCompleted, gameApplied,
+  replayDiscarded,
+  turnAnimationReset,
+} =
   turnAnimationSlice.actions;
 
 export const selectTurnAnimationPhase = (state: RootState) => state.turnAnimation.phase;

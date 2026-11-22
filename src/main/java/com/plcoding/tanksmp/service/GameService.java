@@ -62,8 +62,7 @@ public class GameService {
         Game game = new Game();
         game.setGameId(UUID.randomUUID().toString());
         game.setGameStatus(GameStatus.NEW);
-        game.setColorSchema(
-                (random.nextBoolean() ? ColorSchemas.DAY_COLORS : ColorSchemas.DUSK_COLORS).toString());
+        game.setColorSchema(randomColorSchema());
         game.setCurrentPlayerIndex(0);
         game.setLastActivityAt(clock.instant());
 
@@ -140,16 +139,7 @@ public class GameService {
                         "At least " + GameConstants.MIN_PLAYERS + " players are needed to start.");
             }
 
-            List<Point2D> topography = new TerrainGenerator(random).generate();
-            List<Point2D> tankPositions = TankPlacement.generateTankPositions(topography, playerCount, random);
-            for (int playerIndex = 0; playerIndex < playerCount; playerIndex++) {
-                requestedGame.getPlayers().get(playerIndex).getTank().setPosition(tankPositions.get(playerIndex));
-            }
-            requestedGame.setTopography(new ArrayList<>(topography));
-            requestedGame.setClouds(new CloudGenerator(random).generate());
-            requestedGame.setCurrentPlayerIndex(0);
-            requestedGame.setTurnNumber(0);
-            requestedGame.setWinnerIndex(null);
+            beginRound(requestedGame, 0);
             requestedGame.setGameStatus(GameStatus.IN_PROGRESS);
             recordActivity(requestedGame);
 
@@ -157,6 +147,63 @@ public class GameService {
             matchEventPublisher.publish(MatchEvent.gameUpdated(snapshot));
             return snapshot;
         }
+    }
+
+    /**
+     * Restarts a finished match with the same players: the host only. The winner gains a win, the
+     * battlefield and every tank are renewed, and the first turn goes to the player after whoever
+     * started the previous round.
+     */
+    public Game rematch(String gameId, String playerToken) {
+        Game requestedGame = findLiveGame(gameId);
+        synchronized (requestedGame) {
+            Player requestingPlayer = authenticate(requestedGame, playerToken);
+            if (!requestingPlayer.getPlayerIndex().equals(requestedGame.getHostPlayerIndex())) {
+                throw new ForbiddenException("Only the host can start a rematch.");
+            }
+            if (requestedGame.getGameStatus() != GameStatus.FINISHED) {
+                throw new InvalidGameStateException("A rematch is only possible once the match is finished.");
+            }
+            Integer winnerIndex = requestedGame.getWinnerIndex();
+            if (winnerIndex != null && winnerIndex != EngineConstants.NO_SURVIVOR_INDEX) {
+                Player winner = requestedGame.getPlayers().get(winnerIndex);
+                winner.setWins(winner.getWins() + 1);
+            }
+            requestedGame.setColorSchema(randomColorSchema());
+            for (Player player : requestedGame.getPlayers()) {
+                player.setTank(Tank.createDefault(player.getTank().getColorIndex()));
+            }
+            int nextStartingPlayerIndex =
+                    (requestedGame.getStartingPlayerIndex() + 1) % requestedGame.getPlayers().size();
+            beginRound(requestedGame, nextStartingPlayerIndex);
+            requestedGame.getLastAimAcceptedAtByPlayerIndex().clear();
+            recordActivity(requestedGame);
+
+            Game snapshot = requestedGame.snapshot();
+            matchEventPublisher.publish(MatchEvent.gameUpdated(snapshot));
+            return snapshot;
+        }
+    }
+
+    /** Lays out a fresh battlefield, places the tanks and hands the first turn to {@code startingPlayerIndex}. */
+    private void beginRound(Game game, int startingPlayerIndex) {
+        int playerCount = game.getPlayers().size();
+        List<Point2D> topography = new TerrainGenerator(random).generate();
+        List<Point2D> tankPositions = TankPlacement.generateTankPositions(topography, playerCount, random);
+        for (int playerIndex = 0; playerIndex < playerCount; playerIndex++) {
+            game.getPlayers().get(playerIndex).getTank().setPosition(tankPositions.get(playerIndex));
+        }
+        game.setTopography(new ArrayList<>(topography));
+        game.setClouds(new CloudGenerator(random).generate());
+        game.setStartingPlayerIndex(startingPlayerIndex);
+        game.setCurrentPlayerIndex(startingPlayerIndex);
+        game.setTurnNumber(0);
+        game.setWinnerIndex(null);
+        game.setGameStatus(GameStatus.IN_PROGRESS);
+    }
+
+    private String randomColorSchema() {
+        return (random.nextBoolean() ? ColorSchemas.DAY_COLORS : ColorSchemas.DUSK_COLORS).toString();
     }
 
     /** Plays the current player's turn. The returned event carries the updated match and how the turn played out. */

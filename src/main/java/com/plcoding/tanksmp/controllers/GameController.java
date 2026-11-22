@@ -58,6 +58,13 @@ public class GameController {
         return ResponseEntity.ok(game);
     }
 
+    @PostMapping("/{gameId}/rematch")
+    public ResponseEntity<Game> rematch(@PathVariable("gameId") String gameId,
+            @RequestHeader(value = PLAYER_TOKEN_HEADER, required = false) String playerToken) {
+        log.info("rematch request for match {}", gameId);
+        return ResponseEntity.ok(gameService.rematch(gameId, playerToken));
+    }
+
     @PostMapping("/{gameId}/turns")
     public ResponseEntity<Game> takeTurn(@PathVariable("gameId") String gameId,
             @RequestBody TurnCommand command,
