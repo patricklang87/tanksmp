@@ -16,12 +16,13 @@ import Tanks from "./tanks/Tanks";
 import Projectile from "./projectile/Projectile";
 import Explosion from "./explosion/Explosion";
 import WinnerPopup from "./WinnerPopup";
+import type { LocalAim } from "./tanks/tankAnimation";
 
 /**
  * The battlefield. It shows the match as the server last confirmed it, and replays each resolved
  * turn (drive, shot, explosion, falling tanks) on top of that before the new state is shown.
  */
-const BattleDisplay = ({ game }: { game: Game }) => {
+const BattleDisplay = ({ game, localAim }: { game: Game; localAim?: LocalAim }) => {
   const dispatch = useAppDispatch();
   const phase = useAppSelector(selectTurnAnimationPhase);
   const activeTurn = useAppSelector(selectActiveTurn);
@@ -57,6 +58,7 @@ const BattleDisplay = ({ game }: { game: Game }) => {
           activeTurn={activeTurn}
           phase={phase}
           onPhaseComplete={handlePhaseComplete}
+          localAim={localAim}
         />
         {activeTurn && phase === "PROJECTILE" && (
           <Projectile

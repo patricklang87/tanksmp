@@ -121,3 +121,17 @@ describe("buildTankSprites", () => {
     expect(sprites[1].shields).toBe(100);
   });
 });
+
+describe("buildTankSprites local aim", () => {
+  it("draws the local aim on the local player's tank only", () => {
+    const sprites = buildTankSprites({
+      players,
+      activeTurn: null,
+      phase: "IDLE",
+      frameCount: 0,
+      localAim: { playerIndex: 1, turretAngle: -30 },
+    });
+    expect(sprites[0].turretAngle).toBe(players[0].tank.turretAngle);
+    expect(sprites[1].turretAngle).toBe(-30);
+  });
+});

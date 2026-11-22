@@ -55,17 +55,22 @@ export const getFallFrameCount = (players: Player[], activeTurn: TurnResult): nu
   return Math.ceil(Math.max(0, ...fallDistances) / environmentConstants.fallAnimationSpeed);
 };
 
+/** The aim the local player is setting up; it is previewed on their own turret only. */
+export type LocalAim = { playerIndex: number; turretAngle: number };
+
 /** The tanks as they should be drawn: positioned, colored (flashing red when struck) and aimed. */
 export const buildTankSprites = ({
   players,
   activeTurn,
   phase,
   frameCount,
+  localAim,
 }: {
   players: Player[];
   activeTurn: TurnResult | null;
   phase: TurnAnimationPhase;
   frameCount: number;
+  localAim?: LocalAim;
 }): TankSprite[] => {
   const positions = getTankPositions({ players, activeTurn, phase, frameCount });
   const damageIsVisible = phase === "EXPLOSION" || phase === "FALLING";
@@ -78,7 +83,7 @@ export const buildTankSprites = ({
       position,
       color: isStruck ? designConstants.struckTankColor : tankColor[player.tank.colorIndex],
       shields: damageIsVisible && activeTurn ? activeTurn.shieldsAfter[playerIndex] : player.tank.shields,
-      turretAngle: player.tank.turretAngle,
+      turretAngle: localAim?.playerIndex === playerIndex ? localAim.turretAngle : player.tank.turretAngle,
     });
   });
   return sprites;

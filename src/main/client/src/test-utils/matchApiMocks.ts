@@ -4,6 +4,7 @@ import {
   useJoinMatchMutation,
   useLazyGetMatchQuery,
   useStartMatchMutation,
+  useSubmitTurnMutation,
 } from "../features/api/matchSlice";
 import type { Game } from "../types";
 
@@ -30,6 +31,7 @@ export const mockMatchApi = ({
   lookUpMatch = resolvingTrigger({}),
   joinMatch = resolvingTrigger({}),
   startMatch = resolvingTrigger({}),
+  submitTurn = resolvingTrigger({}),
   isCreating = false,
 }: {
   game?: Game;
@@ -38,6 +40,7 @@ export const mockMatchApi = ({
   lookUpMatch?: TriggerMock;
   joinMatch?: TriggerMock;
   startMatch?: TriggerMock;
+  submitTurn?: TriggerMock;
   isCreating?: boolean;
 } = {}) => {
   jest.mocked(useCreateMatchMutation).mockReturnValue([
@@ -50,10 +53,14 @@ export const mockMatchApi = ({
   ] as never);
   jest.mocked(useJoinMatchMutation).mockReturnValue([joinMatch, { isLoading: false }] as never);
   jest.mocked(useStartMatchMutation).mockReturnValue([startMatch, { isLoading: false }] as never);
+  jest.mocked(useSubmitTurnMutation).mockReturnValue([
+    submitTurn,
+    { isLoading: false },
+  ] as never);
   jest.mocked(useGetMatchQuery).mockReturnValue({
     data: game,
     isFetching: false,
     error: loadMatchError,
   } as never);
-  return { createMatch, lookUpMatch, joinMatch, startMatch };
+  return { createMatch, lookUpMatch, joinMatch, startMatch, submitTurn };
 };
