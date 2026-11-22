@@ -1,10 +1,8 @@
 import { tankColor, tankDimensions } from "../../../../constants";
 import {
   calculateTurretEndpoints,
-  centerTank,
   drawTank,
   drawTanks,
-  uncenterTank,
 } from "./tankDrawing";
 
 describe("calculateTurretEndpoints", () => {
@@ -39,21 +37,6 @@ describe("calculateTurretEndpoints", () => {
     });
     expect(startingPoint.x).toBe(100 + tankDimensions.width);
     expect(endingPoint.x - startingPoint.x).toBeCloseTo(tankDimensions.turretLength * 2);
-  });
-});
-
-describe("centerTank and uncenterTank", () => {
-  it("convert between a ground point and the tank's top-left corner", () => {
-    expect(centerTank({ x: 100, y: 300 })).toEqual({
-      x: 100 - tankDimensions.width / 2,
-      y: 300 - tankDimensions.height,
-    });
-    expect(uncenterTank({ x: 90, y: 290 })).toEqual({ x: 100, y: 300 });
-  });
-
-  it("are inverses of each other", () => {
-    const groundPoint = { x: 640, y: 412 };
-    expect(uncenterTank(centerTank(groundPoint))).toEqual(groundPoint);
   });
 });
 

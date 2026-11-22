@@ -11,18 +11,6 @@ export type TankSprite = {
   turretAngle: number;
 };
 
-/** The top-left corner of a tank whose bottom-center rests on `groundPoint`. */
-export const centerTank = (groundPoint: Point2D): Point2D => ({
-  x: groundPoint.x - tankDimensions.width / 2,
-  y: groundPoint.y - tankDimensions.height,
-});
-
-/** The bottom-center of a tank whose top-left corner is at `topLeftPoint`; the inverse of centerTank. */
-export const uncenterTank = (topLeftPoint: Point2D): Point2D => ({
-  x: topLeftPoint.x + tankDimensions.width / 2,
-  y: topLeftPoint.y + tankDimensions.height,
-});
-
 export const calculateTurretEndpoints = ({
   tankPosition,
   turretAngle,
