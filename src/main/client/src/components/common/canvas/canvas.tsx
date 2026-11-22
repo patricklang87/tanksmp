@@ -1,69 +1,43 @@
-import { useEffect, useRef, RefObject } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { canvasConstants } from "../../../constants";
 
-interface Props {
-  animationFunction?: Function;
-  staticShapes?: Function;
-  customProps?: {};
-  cancelationCondition?: Function;
-  onCancelation?: Function;
-  canvasClass?: string;
+export type CanvasDrawCallback = (context: CanvasRenderingContext2D) => void;
+
+interface CanvasProps {
+  /** Called after mount and again whenever the callback identity changes. It must clear what it replaces. */
+  draw: CanvasDrawCallback;
+  /** Accessible description of what the layer shows. */
+  label: string;
+  className?: string;
   width?: number;
   height?: number;
 }
 
-const Canvas = (props: Props) => {
-  const {
-    animationFunction = null,
-    staticShapes = null,
-    customProps = {},
-    cancelationCondition,
-    onCancelation = null,
-    canvasClass = "layering-canvas",
-    width = canvasConstants.width,
-    height = canvasConstants.height,
-  } = props;
+const Canvas = ({
+  draw,
+  label,
+  className = "layering-canvas",
+  width = canvasConstants.width,
+  height = canvasConstants.height,
+}: CanvasProps) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  interface CanvasRef extends RefObject<HTMLCanvasElement> {
-    width?: number;
-    height?: number;
-    clientWidth?: number;
-    clientHeight?: number;
-  }
-
-  const canvasRef: CanvasRef = useRef(null);
-
- if (canvasRef.height && canvasRef.clientWidth && canvasRef.clientHeight) {
-      canvasRef.width =
-        canvasRef.height * (canvasRef.clientWidth / canvasRef.clientHeight);
+  // A layout effect draws before the browser paints, so a remounted layer never flashes empty.
+  useLayoutEffect(() => {
+    const context = canvasRef.current?.getContext("2d");
+    if (context) {
+      draw(context);
     }
-
-  useEffect(() => {
-    if (canvasRef?.current) {
-      const ctx = canvasRef.current.getContext("2d");
-      if (staticShapes) {
-        staticShapes(ctx, customProps);
-      }
-      if (animationFunction) {
-        const animationId = requestAnimationFrame(() =>
-          animationFunction(ctx, customProps)
-        );
-        if (cancelationCondition && cancelationCondition(customProps)) {
-          cancelAnimationFrame(animationId);
-          if (onCancelation) {
-            onCancelation(customProps);
-          }
-        }
-      }
-    }
-  }, [customProps]);
+  }, [draw]);
 
   return (
     <canvas
       ref={canvasRef}
       width={width}
       height={height}
-      className={canvasClass}
+      className={className}
+      role="img"
+      aria-label={label}
     />
   );
 };

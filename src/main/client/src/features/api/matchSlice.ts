@@ -1,20 +1,14 @@
-import { connectToSocket } from "./stompConnection";
+import { subscribeToMatchEvents } from "./matchEventSubscription";
+import type { RootState } from "../../redux/store";
 import apiSlice from "./apiSlice";
 import type {
   Game,
   JoinMatchRequest,
   JoinMatchResponse,
-  MatchEvent,
   TurnCommand,
 } from "../../types";
 
 const PLAYER_TOKEN_HEADER = "X-Player-Token";
-
-/**
- * The game a broadcast event leaves the match in. Both event types carry the full game, so the
- * cache can simply be replaced. (Replaying a TURN_RESOLVED animation comes with the battlefield.)
- */
-export const gameFromMatchEvent = (event: MatchEvent): Game => event.game;
 
 type PlayerAuthorizedRequest = { matchId: string; playerToken: string };
 
@@ -27,26 +21,22 @@ export const matchApi = apiSlice.injectEndpoints({
       query: (matchId) => `/matches/${matchId}`,
       async onCacheEntryAdded(
         matchId,
-        { cacheDataLoaded, cacheEntryRemoved, updateCachedData }
+        { cacheDataLoaded, cacheEntryRemoved, updateCachedData, dispatch, getState }
       ) {
-        const stompClient = connectToSocket();
-        try {
-          await cacheDataLoaded;
-          stompClient.connect({}, () => {
-            stompClient.subscribe(`/topic/game-progress/${matchId}`, (message) => {
-              const matchEvent: MatchEvent = JSON.parse(message.body);
-              const updatedGame = gameFromMatchEvent(matchEvent);
-              updateCachedData(() => updatedGame);
-            });
-          });
-        } catch {
-          // The initial request failed (for example an unknown match ID), so there is nothing to
-          // subscribe to; the query itself reports the error.
-        }
-        await cacheEntryRemoved;
-        if (stompClient.connected) {
-          stompClient.disconnect(() => undefined);
-        }
+        await subscribeToMatchEvents(matchId, {
+          cacheDataLoaded,
+          cacheEntryRemoved,
+          dispatch,
+          getState: () => getState() as RootState,
+          applyGame: (game) => updateCachedData(() => game),
+          refetchMatch: () =>
+            dispatch(
+              matchApi.endpoints.getMatch.initiate(matchId, {
+                forceRefetch: true,
+                subscribe: false,
+              })
+            ).unwrap(),
+        });
       },
     }),
     joinMatch: builder.mutation<

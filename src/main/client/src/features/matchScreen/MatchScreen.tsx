@@ -1,13 +1,10 @@
-import React from "react";
 import useMatchScreenProps from "./useMatchScreenProps";
-import BattleDisplay from "./battleDisplay/BattleDIsplay";
+import BattleDisplay from "./battleDisplay/BattleDisplay";
 
 const MatchScreen = () => {
-    useMatchScreenProps();
-    return <>
-        <p>Match Display</p>
-        <BattleDisplay />
-    </>
+  const { data: game } = useMatchScreenProps();
+  if (!game) return null;
+  return <BattleDisplay game={game} />;
 };
 
 export default MatchScreen;
