@@ -6,7 +6,7 @@ const renderSelector = (claimedColors?: (string | undefined)[], requestedColor: 
   const setRequestedColor = jest.fn();
   const { container } = render(
     <SelectTankColor
-      data={claimedColors ? { claimedColors } : undefined}
+      claimedColors={claimedColors}
       setRequestedColor={setRequestedColor}
       requestedColor={requestedColor}
     />

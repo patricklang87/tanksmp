@@ -2,22 +2,22 @@ import Canvas from "../../../components/common/canvas/canvas"
 import { canvasConstants, colorSchemes } from "../../../constants"
 import { ColorScheme } from "../../../types";
 import { useAppSelector } from "../../../redux/hooks";
-import { selectMatchId } from "../../../redux/gameInfoRedux";
-import { useSubscribeMatchQuery } from "../../api/matchSlice";
+import { selectMatchId } from "../../../redux/sessionSlice";
+import { skipToken } from "@reduxjs/toolkit/query";
+import { useGetMatchQuery } from "../../api/matchSlice";
 
 const StaticBackground = () => {
   const matchId = useAppSelector(selectMatchId);
-  const { data } = useSubscribeMatchQuery(matchId);
-  const colorScheme = data.colorSchema;
-
-  console.log("in static background", colorScheme, data);
+  const { data } = useGetMatchQuery(matchId ?? skipToken);
+  const colorScheme = data?.colorSchema;
 
   const drawStaticBackground = (
     ctx: CanvasRenderingContext2D,
     rectDims: { lineWidth?: number }
   ) => {
     const { lineWidth = 1 } = rectDims;
-    const settingColors: ColorScheme = colorSchemes[colorScheme as keyof typeof colorSchemes]
+    if (!colorScheme) return;
+    const settingColors: ColorScheme = colorSchemes[colorScheme];
     ctx.lineWidth = lineWidth;
     const skyGrad=ctx.createLinearGradient(0, canvasConstants.height, 0,0);
     skyGrad.addColorStop(0, settingColors.lowSkyColor);

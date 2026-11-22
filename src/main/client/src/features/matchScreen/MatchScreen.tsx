@@ -3,8 +3,7 @@ import useMatchScreenProps from "./useMatchScreenProps";
 import BattleDisplay from "./battleDisplay/BattleDIsplay";
 
 const MatchScreen = () => {
-    const { data } = useMatchScreenProps();
-    console.log("match screen data", data);
+    useMatchScreenProps();
     return <>
         <p>Match Display</p>
         <BattleDisplay />

@@ -1,96 +1,108 @@
 import { connectToSocket } from "./stompConnection";
 import apiSlice from "./apiSlice";
+import type {
+  Game,
+  JoinMatchRequest,
+  JoinMatchResponse,
+  MatchEvent,
+  TurnCommand,
+} from "../../types";
 
-// https://wanago.io/2022/01/03/websockets-redux-toolkit-query-typescript/
+const PLAYER_TOKEN_HEADER = "X-Player-Token";
 
-// https://redux-toolkit.js.org/rtk-query/usage/mutations
-// https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/WebSocket
-// https://stackoverflow.com/questions/75593402/react-rtk-query-with-socket-io-connection-behaves-strangely-during-data-update
-// figure out how to subscribe to a particular game?
+/**
+ * The game a broadcast event leaves the match in. Both event types carry the full game, so the
+ * cache can simply be replaced. (Replaying a TURN_RESOLVED animation comes with the battlefield.)
+ */
+export const gameFromMatchEvent = (event: MatchEvent): Game => event.game;
 
-export interface InitializationDto {
-  playerName: string;
-  requestedColor: number;
-  gameId?: string;
-}
+type PlayerAuthorizedRequest = { matchId: string; playerToken: string };
 
-export const extendedApiSlice = apiSlice.injectEndpoints({
+export const matchApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    initializeMatch: builder.query({
+    createMatch: builder.mutation<Game, void>({
       query: () => ({ url: "/matches", method: "POST" }),
     }),
-    subscribeMatch: builder.query({
-      query: (gameId) => `/matches/${gameId}`,
+    getMatch: builder.query<Game, string>({
+      query: (matchId) => `/matches/${matchId}`,
       async onCacheEntryAdded(
-        gameId,
+        matchId,
         { cacheDataLoaded, cacheEntryRemoved, updateCachedData }
       ) {
-        const stompClient = connectToSocket()
+        const stompClient = connectToSocket();
         try {
           await cacheDataLoaded;
-
-          stompClient.connect([], () => {
-            stompClient.subscribe(
-              "/topic/game-progress/" + gameId,
-              (message) => {
-                // Broadcasts are MatchEvents: { type, game, turnResult }.
-                const recievedMessage = JSON.parse(message.body).game;
-
-                updateCachedData((draft) => {
-                  draft.claimedColors = recievedMessage.claimedColors;
-                  draft.players = recievedMessage.players;
-                  draft.gameStatus = recievedMessage.gameStatus;
-                });
-                
-              }
-            );
+          stompClient.connect({}, () => {
+            stompClient.subscribe(`/topic/game-progress/${matchId}`, (message) => {
+              const matchEvent: MatchEvent = JSON.parse(message.body);
+              const updatedGame = gameFromMatchEvent(matchEvent);
+              updateCachedData(() => updatedGame);
+            });
           });
-        } catch (err) {
-          console.log("error: ", err);
+        } catch {
+          // The initial request failed (for example an unknown match ID), so there is nothing to
+          // subscribe to; the query itself reports the error.
         }
-        // cacheEntryRemoved will resolve when the cache subscription is no longer active
         await cacheEntryRemoved;
-        // perform cleanup steps once the `cacheEntryRemoved` promise resolves
-        stompClient.disconnect(() => {
-          "Disconnecting from Stomp client.";
-        });
+        if (stompClient.connected) {
+          stompClient.disconnect(() => undefined);
+        }
       },
-      providesTags: ["Match"],
     }),
-    joinMatch: builder.mutation({
-      query: ({
-        playerName,
-        gameId,
-        requestedColor,
-      }: {
-        playerName: string;
-        gameId: string;
-        requestedColor: number | null;
-      }) => ({
-        url: `/matches/${gameId}/players`,
+    joinMatch: builder.mutation<
+      JoinMatchResponse,
+      JoinMatchRequest & { matchId: string }
+    >({
+      query: ({ matchId, playerName, requestedColor }) => ({
+        url: `/matches/${matchId}/players`,
         method: "POST",
         body: { playerName, requestedColor },
       }),
+      async onQueryStarted({ matchId }, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(
+            matchApi.util.updateQueryData("getMatch", matchId, () => data.game)
+          );
+        } catch {
+          // The mutation result carries the error for the caller.
+        }
+      },
     }),
-    startMatch: builder.mutation({
-      query: (gameId) => ({
-        url: `/matches/${gameId}/start`,
+    startMatch: builder.mutation<Game, PlayerAuthorizedRequest>({
+      query: ({ matchId, playerToken }) => ({
+        url: `/matches/${matchId}/start`,
         method: "POST",
+        headers: { [PLAYER_TOKEN_HEADER]: playerToken },
+      }),
+      async onQueryStarted({ matchId }, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(matchApi.util.updateQueryData("getMatch", matchId, () => data));
+        } catch {
+          // The mutation result carries the error for the caller.
+        }
+      },
+    }),
+    submitTurn: builder.mutation<
+      Game,
+      PlayerAuthorizedRequest & { command: TurnCommand }
+    >({
+      query: ({ matchId, playerToken, command }) => ({
+        url: `/matches/${matchId}/turns`,
+        method: "POST",
+        headers: { [PLAYER_TOKEN_HEADER]: playerToken },
+        body: command,
       }),
     }),
   }),
 });
 
-
 export const {
-  //   useGetMatchesQuery,
-  useStartMatchMutation,
+  useCreateMatchMutation,
+  useGetMatchQuery,
+  useLazyGetMatchQuery,
   useJoinMatchMutation,
-  useLazyInitializeMatchQuery,
-  useLazySubscribeMatchQuery,
-  useSubscribeMatchQuery,
-} = extendedApiSlice;
-
-
-
-
+  useStartMatchMutation,
+  useSubmitTurnMutation,
+} = matchApi;

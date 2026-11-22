@@ -7,6 +7,8 @@ const SOCKET_ENDPOINT = "/ws";
 export const connectToSocket = () => {
   const socket = new SockJS(SOCKET_ENDPOINT);
   const stompClient = Stomp.over(socket);
+  // stompjs logs every frame to the console by default.
+  stompClient.debug = () => undefined;
 
   return stompClient;
 };
