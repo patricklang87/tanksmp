@@ -33,6 +33,32 @@ public class Game {
     @JsonIgnore
     private volatile Instant lastActivityAt;
 
+    /**
+     * Deep copy of the match as it is right now, safe to serialize or hand to other threads while
+     * the live match keeps changing. Player tokens are not carried over. Call it while holding the
+     * match's lock so the copy is internally consistent.
+     */
+    public Game snapshot() {
+        Game copy = new Game();
+        copy.gameId = gameId;
+        copy.players = players.stream().map(Player::snapshot).toList();
+        copy.gameStatus = gameStatus;
+        copy.topography = topography.stream()
+                .map(point -> new Point2D(point.getX(), point.getY())).toList();
+        copy.clouds = clouds.stream()
+                .map(cloud -> new Cloud(new Point2D(cloud.point().getX(), cloud.point().getY()), cloud.size()))
+                .toList();
+        copy.colorSchema = colorSchema;
+        copy.currentPlayerIndex = currentPlayerIndex;
+        copy.hostPlayerIndex = hostPlayerIndex;
+        copy.winnerIndex = winnerIndex;
+        copy.turnNumber = turnNumber;
+        copy.maxPlayerCount = maxPlayerCount;
+        copy.claimedColors = claimedColors.clone();
+        copy.lastActivityAt = lastActivityAt;
+        return copy;
+    }
+
     public Game() {
         Arrays.fill(this.claimedColors, "");
     }

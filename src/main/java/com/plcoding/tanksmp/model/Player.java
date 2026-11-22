@@ -23,4 +23,9 @@ public class Player {
     @JsonIgnore
     @ToString.Exclude
     private UUID playerToken;
+
+    /** Deep copy for publishing: the secret token is deliberately left out. */
+    public Player snapshot() {
+        return new Player(name, tank.snapshot(), playerIndex, wins, null);
+    }
 }

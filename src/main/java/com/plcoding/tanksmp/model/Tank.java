@@ -29,6 +29,21 @@ public class Tank {
     /** Rounds left per limited weapon; weapons without an entry have unlimited use. */
     private Map<TankActionName, Integer> remainingRounds = new EnumMap<>(TankActionName.class);
 
+    /** Deep copy that shares no mutable state with this tank. */
+    public Tank snapshot() {
+        Tank copy = new Tank();
+        copy.colorIndex = colorIndex;
+        copy.position = position == null ? null : new Point2D(position.getX(), position.getY());
+        copy.turretAngle = turretAngle;
+        copy.shotPower = shotPower;
+        copy.driveDistance = driveDistance;
+        copy.shields = shields;
+        copy.tankActions = tankActions.copy();
+        copy.selectedAction = selectedAction;
+        copy.remainingRounds.putAll(remainingRounds);
+        return copy;
+    }
+
     public static Tank createDefault(int colorIndex) {
         Tank tank = new Tank();
         tank.colorIndex = colorIndex;

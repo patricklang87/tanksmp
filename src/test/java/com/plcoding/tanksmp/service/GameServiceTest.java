@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -49,13 +50,16 @@ class GameServiceTest {
     private MutableClock clock;
     private GameService gameService;
     private Game game;
+    private List<MatchEvent> recordedEvents;
 
     @BeforeEach
     void setUp() {
         gameStorage = new GameStorage();
         clock = new MutableClock(Instant.parse("2026-01-01T00:00:00Z"));
-        gameService = new GameService(gameStorage, new Random(42), clock);
-        game = gameService.initializeGame();
+        recordedEvents = new CopyOnWriteArrayList<>();
+        gameService = new GameService(gameStorage, new Random(42), clock, recordedEvents::add);
+        // Tests inspect and arrange the live match directly; the service itself only hands out snapshots.
+        game = gameStorage.findById(gameService.initializeGame().getGameId()).orElseThrow();
     }
 
     private JoinMatchResponse join(String name, int color) {
@@ -256,7 +260,7 @@ class GameServiceTest {
         MatchEvent event = gameService.takeTurn(game.getGameId(), fireCommand(-60, 70), tokens.get(0));
 
         assertThat(event.type()).isEqualTo(MatchEvent.MatchEventType.TURN_RESOLVED);
-        assertThat(event.game()).isSameAs(game);
+        assertThat(event.game()).isNotSameAs(game).isEqualTo(game.snapshot());
         assertThat(event.turnResult().actingPlayerIndex()).isZero();
         assertThat(event.turnResult().projectilePath()).isNotEmpty();
         assertThat(game.getCurrentPlayerIndex()).isEqualTo(1);
@@ -524,5 +528,120 @@ class GameServiceTest {
                 .isInstanceOf(InvalidRequestException.class)
                 .hasMessageContaining("required");
         assertThat(game.getPlayers()).isEmpty();
+    }
+
+    @Test
+    void takeTurnChecksTheTokenBeforeTheMatchStatus() {
+        join("alice", 0);
+
+        assertThatThrownBy(() -> gameService.takeTurn(game.getGameId(), fireCommand(-45, 50),
+                UUID.randomUUID().toString()))
+                .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    void snapshotIsUnaffectedByLaterChangesToTheLiveMatch() {
+        startTwoPlayerMatch();
+        Game snapshot = gameService.getGame(game.getGameId());
+        Game expected = game.snapshot();
+
+        game.getPlayers().get(0).getTank().setShields(0);
+        game.getPlayers().get(0).getTank().getPosition().setX(-1f);
+        game.getPlayers().get(0).getTank().getRemainingRounds().put(TankActionName.BEGEMOT, 0);
+        game.getPlayers().get(0).getTank().getTankActions().getStandardShot().setDamage(999);
+        game.getPlayers().get(0).getTank().getTankActions().getStandardShot().getExplosionColor()[0] = 1;
+        game.getPlayers().get(1).setName("renamed");
+        game.getTopography().get(0).setY(-5f);
+        game.getClouds().get(0).point().setX(-7f);
+        game.getClaimedColors()[0] = "changed";
+        game.setTurnNumber(99);
+        game.setGameStatus(GameStatus.FINISHED);
+
+        assertThat(snapshot).isEqualTo(expected);
+        assertThat(snapshot.getPlayers()).extracting(Player::getPlayerToken).containsOnlyNulls();
+    }
+
+    @Test
+    void everyServiceMethodReturnsSnapshotsNotTheLiveMatch() {
+        String hostToken = join("alice", 0).playerToken();
+        String guestToken = join("bob", 1).playerToken();
+
+        assertThat(gameService.initializeGame()).isNotSameAs(
+                gameStorage.findById(gameService.initializeGame().getGameId()).orElseThrow());
+        assertThat(gameService.getGame(game.getGameId())).isNotSameAs(game);
+        assertThat(join("carol", 2).game()).isNotSameAs(game);
+        assertThat(gameService.startGame(game.getGameId(), hostToken)).isNotSameAs(game);
+        MatchEvent event = gameService.takeTurn(game.getGameId(), fireCommand(-60, 70), hostToken);
+        assertThat(event.game()).isNotSameAs(game);
+        assertThat(guestToken).isNotBlank();
+    }
+
+    @Test
+    void eventsArePublishedForEachStateChangeInOrder() {
+        List<String> tokens = startTwoPlayerMatch();
+        gameService.takeTurn(game.getGameId(), fireCommand(-60, 70), tokens.get(0));
+
+        assertThat(recordedEvents).extracting(MatchEvent::type).containsExactly(
+                MatchEvent.MatchEventType.GAME_UPDATED, MatchEvent.MatchEventType.GAME_UPDATED,
+                MatchEvent.MatchEventType.GAME_UPDATED, MatchEvent.MatchEventType.TURN_RESOLVED);
+    }
+
+    @Test
+    void concurrentJoinsReadsAndTurnsLeaveAConsistentMatchAndOrderedEvents() throws Exception {
+        String hostToken = join("host", 0).playerToken();
+        String guestToken = join("guest", 1).playerToken();
+        gameService.startGame(game.getGameId(), hostToken);
+        // Turns need an active match, joins need a new one: run joins first on a second match with the same pattern.
+        Game joinMatch = gameService.initializeGame();
+        String joinMatchId = joinMatch.getGameId();
+        int threadCount = 24;
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch startSignal = new CountDownLatch(1);
+        List<Future<?>> futures = new ArrayList<>();
+        List<String> joinedNames = java.util.Collections.synchronizedList(new ArrayList<>());
+        for (int workerIndex = 0; workerIndex < threadCount; workerIndex++) {
+            final int worker = workerIndex;
+            futures.add(executor.submit(() -> {
+                startSignal.await();
+                for (int round = 0; round < 20; round++) {
+                    try {
+                        if (worker % 3 == 0) {
+                            String name = "p" + worker + "-" + round;
+                            gameService.joinGame(name, worker % GameConstants.MAX_PLAYERS, joinMatchId);
+                            joinedNames.add(name);
+                        }
+                    } catch (InvalidGameStateException | InvalidRequestException expectedRejection) {
+                        // match full or color taken: fine
+                    }
+                    gameService.getGame(joinMatchId);
+                    try {
+                        gameService.takeTurn(game.getGameId(), fireCommand(-60, 70),
+                                worker % 2 == 0 ? hostToken : guestToken);
+                    } catch (InvalidGameStateException | InvalidRequestException expectedRejection) {
+                        // not this player's turn or match finished: fine
+                    }
+                }
+                return null;
+            }));
+        }
+        startSignal.countDown();
+        for (Future<?> future : futures) {
+            future.get(30, TimeUnit.SECONDS);
+        }
+        executor.shutdownNow();
+
+        Game finalJoinState = gameService.getGame(joinMatchId);
+        assertThat(finalJoinState.getPlayers()).extracting(Player::getName)
+                .containsExactlyInAnyOrderElementsOf(joinedNames);
+        List<Integer> playerCountsInPublishOrder = recordedEvents.stream()
+                .filter(event -> event.game().getGameId().equals(joinMatchId))
+                .map(event -> event.game().getPlayers().size()).toList();
+        assertThat(playerCountsInPublishOrder).isSorted();
+        assertThat(playerCountsInPublishOrder).hasSize(joinedNames.size());
+        List<Integer> turnNumbersInPublishOrder = recordedEvents.stream()
+                .filter(event -> event.game().getGameId().equals(game.getGameId()))
+                .filter(event -> event.type() == MatchEvent.MatchEventType.TURN_RESOLVED)
+                .map(event -> event.game().getTurnNumber()).toList();
+        assertThat(turnNumbersInPublishOrder).isSorted();
     }
 }

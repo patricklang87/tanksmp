@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.jayway.jsonpath.JsonPath;
 import com.plcoding.tanksmp.service.FlatGroundDuel;
-import com.plcoding.tanksmp.service.GameService;
+import com.plcoding.tanksmp.storage.GameStorage;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -28,7 +28,7 @@ class GameControllerTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private GameService gameService;
+    private GameStorage gameStorage;
 
     private String createGame() throws Exception {
         String body = mockMvc.perform(post("/api/matches"))
@@ -104,7 +104,7 @@ class GameControllerTest {
                 .andExpect(jsonPath("$.turnNumber").value(2));
 
         // Set up a decisive shot for alice's next turn.
-        FlatGroundDuel.arrange(gameService.getGame(gameId));
+        FlatGroundDuel.arrange(gameStorage.findById(gameId).orElseThrow());
         FlatGroundDuel.Shot winningShot = FlatGroundDuel.findWinningShot();
         mockMvc.perform(post("/api/matches/" + gameId + "/turns")
                 .header(TOKEN_HEADER, aliceToken)

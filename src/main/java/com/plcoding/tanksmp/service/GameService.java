@@ -36,8 +36,10 @@ import com.plcoding.tanksmp.storage.GameStorage;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Match rules. Every operation that changes a match runs while holding that match's own monitor,
- * so concurrent joins, starts and turns on the same match are applied one at a time.
+ * Match rules. Every operation that reads or changes a match runs while holding that match's own
+ * monitor, so concurrent joins, starts and turns on the same match are applied one at a time.
+ * Callers only ever receive snapshots taken under that monitor, and events are published before
+ * it is released, so events reach listeners in the order the state changed.
  */
 @Service
 @RequiredArgsConstructor
@@ -46,6 +48,7 @@ public class GameService {
     private final GameStorage gameStorage;
     private final Random random;
     private final Clock clock;
+    private final MatchEventPublisher matchEventPublisher;
 
     public Game initializeGame() {
         Game game = new Game();
@@ -57,16 +60,24 @@ public class GameService {
         game.setLastActivityAt(clock.instant());
 
         gameStorage.save(game);
-        return game;
+        return game.snapshot();
     }
 
+    /** Snapshot of the match as it is right now. */
     public Game getGame(String gameId) {
+        Game requestedGame = findLiveGame(gameId);
+        synchronized (requestedGame) {
+            return requestedGame.snapshot();
+        }
+    }
+
+    private Game findLiveGame(String gameId) {
         return gameStorage.findById(gameId)
                 .orElseThrow(() -> new GameNotFoundException("A game with that ID does not exist."));
     }
 
     public JoinMatchResponse joinGame(String rawPlayerName, Integer requestedColor, String gameId) {
-        Game requestedGame = getGame(gameId);
+        Game requestedGame = findLiveGame(gameId);
         String playerName = rawPlayerName == null ? null : rawPlayerName.trim();
         validatePlayerName(playerName);
         validateRequestedColor(requestedColor);
@@ -98,13 +109,15 @@ public class GameService {
             }
             recordActivity(requestedGame);
 
-            return new JoinMatchResponse(requestedGame, currentPlayerCount, playerToken.toString());
+            Game snapshot = requestedGame.snapshot();
+            matchEventPublisher.publish(MatchEvent.gameUpdated(snapshot));
+            return new JoinMatchResponse(snapshot, currentPlayerCount, playerToken.toString());
         }
     }
 
     /** Starts the match: only the host may, and at least {@link GameConstants#MIN_PLAYERS} must have joined. */
     public Game startGame(String gameId, String playerToken) {
-        Game requestedGame = getGame(gameId);
+        Game requestedGame = findLiveGame(gameId);
         synchronized (requestedGame) {
             Player requestingPlayer = authenticate(requestedGame, playerToken);
             if (!requestingPlayer.getPlayerIndex().equals(requestedGame.getHostPlayerIndex())) {
@@ -132,18 +145,20 @@ public class GameService {
             requestedGame.setGameStatus(GameStatus.IN_PROGRESS);
             recordActivity(requestedGame);
 
-            return requestedGame;
+            Game snapshot = requestedGame.snapshot();
+            matchEventPublisher.publish(MatchEvent.gameUpdated(snapshot));
+            return snapshot;
         }
     }
 
     /** Plays the current player's turn. The returned event carries the updated match and how the turn played out. */
     public MatchEvent takeTurn(String gameId, TurnCommand command, String playerToken) {
-        Game requestedGame = getGame(gameId);
+        Game requestedGame = findLiveGame(gameId);
         synchronized (requestedGame) {
+            Player actingPlayer = authenticate(requestedGame, playerToken);
             if (requestedGame.getGameStatus() != GameStatus.IN_PROGRESS) {
                 throw new InvalidGameStateException("This game is not in progress.");
             }
-            Player actingPlayer = authenticate(requestedGame, playerToken);
             if (actingPlayer.getPlayerIndex() != requestedGame.getCurrentPlayerIndex()) {
                 throw new InvalidGameStateException("It is not your turn.");
             }
@@ -164,13 +179,14 @@ public class GameService {
             }
             recordActivity(requestedGame);
 
-            return MatchEvent.turnResolved(requestedGame, turnResult);
+            MatchEvent turnEvent = MatchEvent.turnResolved(requestedGame.snapshot(), turnResult);
+            matchEventPublisher.publish(turnEvent);
+            return turnEvent;
         }
     }
 
     private void recordActivity(Game game) {
         game.setLastActivityAt(clock.instant());
-        gameStorage.save(game);
     }
 
     /** Finds the player owning the token; a missing, malformed or unknown token is forbidden. */

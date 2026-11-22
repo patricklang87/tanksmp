@@ -1,7 +1,6 @@
 package com.plcoding.tanksmp.controllers;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,10 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 public class GameController {
 
     static final String PLAYER_TOKEN_HEADER = "X-Player-Token";
-    private static final String GAME_PROGRESS_TOPIC = "/topic/game-progress/";
 
     private final GameService gameService;
-    private final SimpMessagingTemplate simpMessagingTemplate;
 
     @PostMapping
     public ResponseEntity<Game> createMatch() {
@@ -50,7 +47,6 @@ public class GameController {
         log.info("join request for match {}: {}", gameId, request);
         JoinMatchResponse response = gameService.joinGame(request.getPlayerName(), request.getRequestedColor(),
                 gameId);
-        broadcast(MatchEvent.gameUpdated(response.game()));
         return ResponseEntity.ok(response);
     }
 
@@ -59,7 +55,6 @@ public class GameController {
             @RequestHeader(value = PLAYER_TOKEN_HEADER, required = false) String playerToken) {
         log.info("start request for match {}", gameId);
         Game game = gameService.startGame(gameId, playerToken);
-        broadcast(MatchEvent.gameUpdated(game));
         return ResponseEntity.ok(game);
     }
 
@@ -69,11 +64,6 @@ public class GameController {
             @RequestHeader(value = PLAYER_TOKEN_HEADER, required = false) String playerToken) {
         log.info("turn request for match {}", gameId);
         MatchEvent turnEvent = gameService.takeTurn(gameId, command, playerToken);
-        broadcast(turnEvent);
         return ResponseEntity.ok(turnEvent.game());
-    }
-
-    private void broadcast(MatchEvent matchEvent) {
-        simpMessagingTemplate.convertAndSend(GAME_PROGRESS_TOPIC + matchEvent.game().getGameId(), matchEvent);
     }
 }
