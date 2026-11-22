@@ -31,6 +31,8 @@ class TurnResolverTest {
 
         assertThat(result.actingPlayerIndex()).isZero();
         assertThat(result.actionName()).isEqualTo(TankActionName.STANDARD_SHOT);
+        assertThat(result.turretAngle()).isEqualTo(-45);
+        assertThat(result.shotPower()).isEqualTo(EngineConstants.DEFAULT_SHOT_POWER);
         assertThat(result.projectilePath()).isNotEmpty();
         assertThat(result.drivePath()).isEmpty();
         assertThat(result.struckPlayerIndexes()).containsExactly(1);

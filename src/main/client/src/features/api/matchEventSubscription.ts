@@ -1,10 +1,12 @@
 import type { Dispatch } from "@reduxjs/toolkit";
-import { connectToSocket } from "./stompConnection";
-import type { Game, MatchEvent } from "../../types";
+import { connectToSocket, releaseSharedStompClient, setSharedStompClient } from "./stompConnection";
+import type { AimUpdate, Game, MatchEvent } from "../../types";
 import type { RootState } from "../../redux/store";
+import { selectPlayerIndex } from "../../redux/sessionSlice";
 import {
   applyPendingGame,
   gameUpdateReceived,
+  selectIsReplayInProgress,
   turnEnqueued,
 } from "../../redux/turnAnimationSlice";
 
@@ -13,16 +15,37 @@ type MatchEventDependencies = {
   getState: () => RootState;
   /** Writes a game into the cached match. */
   applyGame: (game: Game) => void;
+  /** Writes another player's live aim into the cached match. */
+  applyAim: (aim: AimUpdate) => void;
+};
+
+/** Copies a live aim onto its player's tank. Changes only the aim, nothing else in the match. */
+export const applyAimToGame = (game: Game, aim: AimUpdate): void => {
+  const aimingTank = game.players[aim.playerIndex]?.tank;
+  if (!aimingTank) return;
+  aimingTank.turretAngle = aim.turretAngle;
+  aimingTank.shotPower = aim.shotPower;
+  aimingTank.selectedAction = aim.selectedActionName;
 };
 
 /**
  * Routes a broadcast to the replay queue. A resolved turn is replayed first and its game shown when
- * the replay ends; any other update is shown immediately unless a replay is running.
+ * the replay ends; any other update is shown immediately unless a replay is running. A live aim only
+ * patches another player's tank, and is skipped while a replay runs (the replay shows the turn's own
+ * aim) and for the local player (whose sliders are the source of truth).
  */
 export const handleMatchEvent = (
   matchEvent: MatchEvent,
-  { dispatch, getState, applyGame }: MatchEventDependencies
+  { dispatch, getState, applyGame, applyAim }: MatchEventDependencies
 ): void => {
+  if (matchEvent.type === "AIM_UPDATED") {
+    const state = getState();
+    const isOwnAim = matchEvent.aim.playerIndex === selectPlayerIndex(state);
+    if (!isOwnAim && !selectIsReplayInProgress(state)) {
+      applyAim(matchEvent.aim);
+    }
+    return;
+  }
   if (matchEvent.type === "TURN_RESOLVED" && matchEvent.turnResult) {
     dispatch(
       turnEnqueued({ turnResult: matchEvent.turnResult, resultingGame: matchEvent.game })
@@ -64,6 +87,7 @@ export const subscribeToMatchEvents = async (
       stompClient.disconnect(() => undefined);
       return;
     }
+    setSharedStompClient(stompClient);
     stompClient.subscribe(`/topic/game-progress/${matchId}`, (message) => {
       handleMatchEvent(JSON.parse(message.body) as MatchEvent, eventDependencies);
     });
@@ -74,6 +98,7 @@ export const subscribeToMatchEvents = async (
 
   await cacheEntryRemoved;
   entryWasRemoved = true;
+  releaseSharedStompClient(stompClient);
   if (stompClient.connected) {
     stompClient.disconnect(() => undefined);
   }

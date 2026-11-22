@@ -63,6 +63,8 @@ export const buildGame = (overrides: Partial<Game> = {}): Game => {
 export const buildTurnResult = (overrides: Partial<TurnResult> = {}): TurnResult => ({
   actingPlayerIndex: 0,
   actionName: "STANDARD_SHOT",
+  turretAngle: -45,
+  shotPower: 60,
   projectilePath: [
     { x: 100, y: 300 },
     { x: 105, y: 295 },

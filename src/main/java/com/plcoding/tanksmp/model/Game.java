@@ -3,7 +3,9 @@ package com.plcoding.tanksmp.model;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.plcoding.tanksmp.customTypes.Point2D;
@@ -32,6 +34,9 @@ public class Game {
     /** Used to remove abandoned matches; internal, so not part of the API. */
     @JsonIgnore
     private volatile Instant lastActivityAt;
+    /** When each player's last live aim update was accepted, for rate limiting; internal and per match. */
+    @JsonIgnore
+    private final Map<Integer, Instant> lastAimAcceptedAtByPlayerIndex = new HashMap<>();
 
     /**
      * Deep copy of the match as it is right now, safe to serialize or hand to other threads while

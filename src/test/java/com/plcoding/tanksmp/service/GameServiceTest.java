@@ -25,6 +25,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import com.plcoding.tanksmp.controllers.dto.AimUpdateCommand;
 import com.plcoding.tanksmp.controllers.dto.JoinMatchResponse;
 import com.plcoding.tanksmp.controllers.dto.MatchEvent;
 import com.plcoding.tanksmp.controllers.dto.TurnCommand;
@@ -643,5 +644,144 @@ class GameServiceTest {
                 .filter(event -> event.type() == MatchEvent.MatchEventType.TURN_RESOLVED)
                 .map(event -> event.game().getTurnNumber()).toList();
         assertThat(turnNumbersInPublishOrder).isSorted();
+    }
+
+    private AimUpdateCommand aimCommand(String playerToken, int turretAngle, int shotPower) {
+        AimUpdateCommand command = new AimUpdateCommand();
+        command.setPlayerToken(playerToken);
+        command.setTurretAngle(turretAngle);
+        command.setShotPower(shotPower);
+        command.setSelectedActionName(TankActionName.STEEL_SHOTPUT);
+        return command;
+    }
+
+    private List<MatchEvent> aimEvents() {
+        return recordedEvents.stream().filter(event -> event.type() == MatchEvent.MatchEventType.AIM_UPDATED)
+                .toList();
+    }
+
+    @Test
+    void aimFromTheCurrentPlayerUpdatesTheirTankAndIsBroadcast() {
+        List<String> tokens = startTwoPlayerMatch();
+
+        gameService.updateAim(game.getGameId(), aimCommand(tokens.get(0), -135, 60));
+
+        Tank tank = game.getPlayers().get(0).getTank();
+        assertThat(tank.getTurretAngle()).isEqualTo(-135);
+        assertThat(tank.getShotPower()).isEqualTo(60);
+        assertThat(tank.getSelectedAction()).isEqualTo(TankActionName.STEEL_SHOTPUT);
+        assertThat(aimEvents()).hasSize(1);
+        MatchEvent.AimUpdate aim = aimEvents().get(0).aim();
+        assertThat(aim).isEqualTo(new MatchEvent.AimUpdate(0, -135, 60, TankActionName.STEEL_SHOTPUT));
+        assertThat(aimEvents().get(0).gameId()).isEqualTo(game.getGameId());
+        assertThat(aimEvents().get(0).game()).isNull();
+        // a fresh snapshot (as served on refresh) shows the latest aim
+        assertThat(gameService.getGame(game.getGameId()).getPlayers().get(0).getTank().getTurretAngle())
+                .isEqualTo(-135);
+    }
+
+    @Test
+    void aimFromAPlayerWhoseTurnItIsNotIsIgnored() {
+        List<String> tokens = startTwoPlayerMatch();
+
+        gameService.updateAim(game.getGameId(), aimCommand(tokens.get(1), -135, 60));
+
+        assertThat(game.getPlayers().get(1).getTank().getTurretAngle()).isEqualTo(-90);
+        assertThat(aimEvents()).isEmpty();
+    }
+
+    @Test
+    void aimWithMissingOrUnknownTokensIsIgnored() {
+        startTwoPlayerMatch();
+
+        gameService.updateAim(game.getGameId(), aimCommand(null, -135, 60));
+        gameService.updateAim(game.getGameId(), aimCommand("not-a-token", -135, 60));
+        gameService.updateAim(game.getGameId(), aimCommand(UUID.randomUUID().toString(), -135, 60));
+        gameService.updateAim(game.getGameId(), null);
+        gameService.updateAim("no-such-match", aimCommand(UUID.randomUUID().toString(), -135, 60));
+
+        assertThat(game.getPlayers().get(0).getTank().getTurretAngle()).isEqualTo(-90);
+        assertThat(aimEvents()).isEmpty();
+    }
+
+    @ParameterizedTest
+    @CsvSource({ "-181,50", "1,50", "-90,-1", "-90,101" })
+    void aimOutOfRangeIsIgnored(int turretAngle, int shotPower) {
+        List<String> tokens = startTwoPlayerMatch();
+
+        gameService.updateAim(game.getGameId(), aimCommand(tokens.get(0), turretAngle, shotPower));
+
+        Tank tank = game.getPlayers().get(0).getTank();
+        assertThat(tank.getTurretAngle()).isEqualTo(-90);
+        assertThat(tank.getShotPower()).isEqualTo(50);
+        assertThat(aimEvents()).isEmpty();
+    }
+
+    @Test
+    void aimWithMissingValuesIsIgnored() {
+        List<String> tokens = startTwoPlayerMatch();
+        AimUpdateCommand withoutAction = aimCommand(tokens.get(0), -100, 40);
+        withoutAction.setSelectedActionName(null);
+        AimUpdateCommand withoutAngle = aimCommand(tokens.get(0), -100, 40);
+        withoutAngle.setTurretAngle(null);
+
+        gameService.updateAim(game.getGameId(), withoutAction);
+        gameService.updateAim(game.getGameId(), withoutAngle);
+
+        assertThat(aimEvents()).isEmpty();
+    }
+
+    @Test
+    void aimUpdatesInsideTheRateLimitWindowAreDroppedPerPlayer() {
+        List<String> tokens = startTwoPlayerMatch();
+
+        gameService.updateAim(game.getGameId(), aimCommand(tokens.get(0), -100, 10));
+        clock.advance(Duration.ofMillis(49));
+        gameService.updateAim(game.getGameId(), aimCommand(tokens.get(0), -110, 20));
+        assertThat(game.getPlayers().get(0).getTank().getTurretAngle()).isEqualTo(-100);
+        assertThat(aimEvents()).hasSize(1);
+
+        clock.advance(Duration.ofMillis(1));
+        gameService.updateAim(game.getGameId(), aimCommand(tokens.get(0), -120, 30));
+        assertThat(game.getPlayers().get(0).getTank().getTurretAngle()).isEqualTo(-120);
+        assertThat(aimEvents()).hasSize(2);
+    }
+
+    @Test
+    void rateLimitedAimDoesNotBlockTheNextPlayersFirstUpdate() {
+        List<String> tokens = startTwoPlayerMatch();
+        gameService.updateAim(game.getGameId(), aimCommand(tokens.get(0), -100, 10));
+        gameService.takeTurn(game.getGameId(), fireCommand(-60, 70), tokens.get(0));
+
+        gameService.updateAim(game.getGameId(), aimCommand(tokens.get(1), -120, 30));
+
+        assertThat(aimEvents()).hasSize(2);
+        assertThat(game.getPlayers().get(1).getTank().getTurretAngle()).isEqualTo(-120);
+    }
+
+    @Test
+    void aimIsIgnoredBeforeTheMatchStartsAndAfterItFinishes() {
+        String hostToken = join("alice", 0).playerToken();
+        join("bob", 1);
+        gameService.updateAim(game.getGameId(), aimCommand(hostToken, -135, 60));
+        assertThat(aimEvents()).isEmpty();
+        assertThat(game.getPlayers().get(0).getTank().getTurretAngle()).isEqualTo(-90);
+
+        gameService.startGame(game.getGameId(), hostToken);
+        game.setGameStatus(GameStatus.FINISHED);
+        gameService.updateAim(game.getGameId(), aimCommand(hostToken, -135, 60));
+        assertThat(aimEvents()).isEmpty();
+        assertThat(game.getPlayers().get(0).getTank().getTurretAngle()).isEqualTo(-90);
+    }
+
+    @Test
+    void aimNeverChangesWhatTheTurnCommandCarries() {
+        List<String> tokens = startTwoPlayerMatch();
+        gameService.updateAim(game.getGameId(), aimCommand(tokens.get(0), -170, 5));
+
+        MatchEvent turnEvent = gameService.takeTurn(game.getGameId(), fireCommand(-60, 70), tokens.get(0));
+
+        assertThat(turnEvent.turnResult().turretAngle()).isEqualTo(-60);
+        assertThat(turnEvent.turnResult().shotPower()).isEqualTo(70);
     }
 }

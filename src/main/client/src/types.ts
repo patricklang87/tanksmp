@@ -107,7 +107,11 @@ export type Explosion = {
 
 export type TurnResult = {
   actingPlayerIndex: number;
+  /** The action actually carried out (after any fallback to the Standard Shot). */
   actionName: TankActionName;
+  /** The acting tank's turret angle for the turn, in the server's -180..0 convention. */
+  turretAngle: number;
+  shotPower: number;
   projectilePath: Point2D[];
   drivePath: Point2D[];
   explosion: Explosion | null;
@@ -120,14 +124,22 @@ export type TurnResult = {
   winnerIndex: number | null;
 };
 
-export type MatchEventType = "GAME_UPDATED" | "TURN_RESOLVED";
+export type MatchEventType = "GAME_UPDATED" | "TURN_RESOLVED" | "AIM_UPDATED";
 
-/** Broadcast on /topic/game-progress/{matchId}. turnResult is only set for TURN_RESOLVED. */
-export type MatchEvent = {
-  type: MatchEventType;
-  game: Game;
-  turnResult: TurnResult | null;
+/** The current player's live aim. Display only: a turn always uses the values sent with the turn. */
+export type AimUpdate = {
+  playerIndex: number;
+  /** Degrees in the server's -180..0 convention. */
+  turretAngle: number;
+  shotPower: number;
+  selectedActionName: TankActionName;
 };
+
+/** Broadcast on /topic/game-progress/{matchId}. */
+export type MatchEvent =
+  | { type: "GAME_UPDATED"; game: Game; turnResult: null }
+  | { type: "TURN_RESOLVED"; game: Game; turnResult: TurnResult }
+  | { type: "AIM_UPDATED"; game: null; turnResult: null; aim: AimUpdate };
 
 export type JoinMatchRequest = {
   playerName: string;

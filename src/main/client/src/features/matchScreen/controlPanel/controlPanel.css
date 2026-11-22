@@ -27,6 +27,11 @@
   font-weight: bold;
 }
 
+.aim-readout {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+}
+
 .shields-panel {
   list-style: none;
   margin: 0;
