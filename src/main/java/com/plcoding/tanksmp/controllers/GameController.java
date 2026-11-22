@@ -6,10 +6,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.plcoding.tanksmp.controllers.dto.JoinGameDto;
+import com.plcoding.tanksmp.controllers.dto.JoinMatchResponse;
+import com.plcoding.tanksmp.controllers.dto.MatchEvent;
+import com.plcoding.tanksmp.controllers.dto.TurnCommand;
 import com.plcoding.tanksmp.model.Game;
 import com.plcoding.tanksmp.service.GameService;
 
@@ -22,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/api/matches")
 public class GameController {
 
+    static final String PLAYER_TOKEN_HEADER = "X-Player-Token";
     private static final String GAME_PROGRESS_TOPIC = "/topic/game-progress/";
 
     private final GameService gameService;
@@ -40,23 +45,35 @@ public class GameController {
     }
 
     @PostMapping("/{gameId}/players")
-    public ResponseEntity<Game> joinMatch(@PathVariable("gameId") String gameId,
+    public ResponseEntity<JoinMatchResponse> joinMatch(@PathVariable("gameId") String gameId,
             @RequestBody JoinGameDto request) {
         log.info("join request for match {}: {}", gameId, request);
-        Game game = gameService.joinGame(request.getPlayerName(), request.getRequestedColor(), gameId);
-        broadcast(game);
-        return ResponseEntity.ok(game);
+        JoinMatchResponse response = gameService.joinGame(request.getPlayerName(), request.getRequestedColor(),
+                gameId);
+        broadcast(MatchEvent.gameUpdated(response.game()));
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{gameId}/start")
-    public ResponseEntity<Game> startMatch(@PathVariable("gameId") String gameId) {
+    public ResponseEntity<Game> startMatch(@PathVariable("gameId") String gameId,
+            @RequestHeader(value = PLAYER_TOKEN_HEADER, required = false) String playerToken) {
         log.info("start request for match {}", gameId);
-        Game game = gameService.startGame(gameId);
-        broadcast(game);
+        Game game = gameService.startGame(gameId, playerToken);
+        broadcast(MatchEvent.gameUpdated(game));
         return ResponseEntity.ok(game);
     }
 
-    private void broadcast(Game game) {
-        simpMessagingTemplate.convertAndSend(GAME_PROGRESS_TOPIC + game.getGameId(), game);
+    @PostMapping("/{gameId}/turns")
+    public ResponseEntity<Game> takeTurn(@PathVariable("gameId") String gameId,
+            @RequestBody TurnCommand command,
+            @RequestHeader(value = PLAYER_TOKEN_HEADER, required = false) String playerToken) {
+        log.info("turn request for match {}", gameId);
+        MatchEvent turnEvent = gameService.takeTurn(gameId, command, playerToken);
+        broadcast(turnEvent);
+        return ResponseEntity.ok(turnEvent.game());
+    }
+
+    private void broadcast(MatchEvent matchEvent) {
+        simpMessagingTemplate.convertAndSend(GAME_PROGRESS_TOPIC + matchEvent.game().getGameId(), matchEvent);
     }
 }

@@ -33,7 +33,8 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
             stompClient.subscribe(
               "/topic/game-progress/" + gameId,
               (message) => {
-                const recievedMessage = JSON.parse(message.body);
+                // Broadcasts are MatchEvents: { type, game, turnResult }.
+                const recievedMessage = JSON.parse(message.body).game;
 
                 updateCachedData((draft) => {
                   draft.claimedColors = recievedMessage.claimedColors;

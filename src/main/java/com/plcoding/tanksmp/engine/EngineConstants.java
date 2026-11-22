@@ -21,6 +21,12 @@ public final class EngineConstants {
     public static final int DEFAULT_TURRET_ANGLE = -90;
     public static final int DEFAULT_SHOT_POWER = 50;
 
+    /** Turret angles a player may request, in degrees (-180 points left, 0 points right). */
+    public static final int MIN_TURRET_ANGLE = -180;
+    public static final int MAX_TURRET_ANGLE = 0;
+    public static final int MIN_SHOT_POWER = 0;
+    public static final int MAX_SHOT_POWER = 100;
+
     /** A tank may drive at most this far (in either direction) in a single turn. */
     public static final int MAX_DRIVE_DISTANCE = 150;
 
