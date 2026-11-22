@@ -1,10 +1,12 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import sessionReducer, { saveSession } from "./sessionSlice";
+import turnAnimationReducer from "./turnAnimationSlice";
 import apiSlice from "../features/api/apiSlice";
 
 const rootReducer = combineReducers({
   [apiSlice.reducerPath]: apiSlice.reducer,
   session: sessionReducer,
+  turnAnimation: turnAnimationReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;

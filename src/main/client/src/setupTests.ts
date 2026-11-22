@@ -8,3 +8,4 @@ Object.assign(globalThis, { TextEncoder, TextDecoder });
 if (typeof globalThis.fetch === "undefined") {
   globalThis.fetch = () => Promise.reject(new Error("Network access is not available in tests."));
 }
+import "jest-canvas-mock";
